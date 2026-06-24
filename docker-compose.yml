@@ -1,0 +1,61 @@
+services:
+
+  pi4-db:
+    image: postgres:15-alpine
+    container_name: pi4-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-tatko_pi}
+      POSTGRES_USER: ${POSTGRES_USER:-tatko}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - pi4-pgdata:/var/lib/postgresql/data
+    networks:
+      - pi4-internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-tatko}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  pi4-backend:
+    build: ./backend
+    container_name: pi4-backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-tatko}:${POSTGRES_PASSWORD}@pi4-db:5432/${POSTGRES_DB:-tatko_pi}
+      SECRET_KEY: ${SECRET_KEY}
+      RESEND_API_KEY: ${RESEND_API_KEY}
+      EMAIL_FROM: ${EMAIL_FROM:-pi@supertakimlar.com}
+      EMAIL_FROM_NAME: ${EMAIL_FROM_NAME:-TATKO PI Envanter}
+      FRONTEND_URL: ${FRONTEND_URL:-https://supertakimlar.com/pi4}
+      ROOT_PATH: /pi4
+      CORS_ORIGINS: ${CORS_ORIGINS:-https://supertakimlar.com}
+    depends_on:
+      pi4-db:
+        condition: service_healthy
+    networks:
+      - pi4-internal
+      - pi4-proxy
+
+  pi4-frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: /pi4
+        VITE_BASE_PATH: /pi4/
+    container_name: pi4-frontend
+    restart: unless-stopped
+    networks:
+      - pi4-proxy
+
+networks:
+  pi4-internal:
+    name: pi4-internal
+  pi4-proxy:
+    name: pi4-proxy
+    external: true
+
+volumes:
+  pi4-pgdata:
+    name: pi4-pgdata

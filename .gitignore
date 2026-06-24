@@ -1,0 +1,30 @@
+# Ortam değişkenleri — asla commit'leme
+.env
+.env.local
+.env.production
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Dev e-posta dosyaları
+backend/emails/
+
+# SQLite (geliştirme veritabanı)
+backend/*.db
+
+# Node
+node_modules/
+frontend/dist/
+frontend/.env
+
+# Docker volumes
+*.tar
+
+# Editor
+.vscode/
+.idea/
+*.swp

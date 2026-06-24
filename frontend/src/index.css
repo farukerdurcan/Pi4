@@ -1,0 +1,59 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background-color: #f5f5f4;
+}
+
+/* Yazdırma stilleri */
+.print-only { display: none; }
+
+@media print {
+  .no-print { display: none !important; }
+  .print-only { display: block !important; }
+
+  /* Tüm scroll kısıtlamalarını kaldır — içerik tam yükseklikte bassın */
+  html, body {
+    height: auto !important;
+    overflow: visible !important;
+    background: white !important;
+  }
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    scrollbar-width: none;
+  }
+  *::-webkit-scrollbar { display: none !important; }
+
+  /* Layout kapsayıcıları serbest bırak */
+  .flex.h-screen,
+  main,
+  .overflow-hidden,
+  .overflow-auto {
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* Print alanı tam genişlikte */
+  .print-area {
+    width: 100% !important;
+    padding: 16px !important;
+    font-size: 11px !important;
+  }
+
+  /* Bireysel rapor — ekran spacing'ini sıkıştır */
+  .print-area .space-y-4 > * + * { margin-top: 8px !important; }
+  .print-area .space-y-6 > * + * { margin-top: 10px !important; }
+  .print-area .p-4, .print-area .p-5, .print-area .p-6 { padding: 10px !important; }
+  .print-area .mb-4 { margin-bottom: 8px !important; }
+  .print-area .mb-5 { margin-bottom: 8px !important; }
+  .print-area .mb-3 { margin-bottom: 6px !important; }
+  .print-area .text-lg { font-size: 13px !important; }
+  .print-area .text-base { font-size: 12px !important; }
+  .print-area .text-2xl { font-size: 16px !important; }
+  .print-area .text-3xl { font-size: 18px !important; }
+  .print-area .h-2 { height: 4px !important; }
+}
