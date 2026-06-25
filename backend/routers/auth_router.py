@@ -109,7 +109,8 @@ async def sifre_degistir(
 
 
 @router.post("/hesap-kur")
-def hesap_kur(veri: HesapKur, db: Session = Depends(get_db)):
+@limiter.limit("3/minute")
+def hesap_kur(request: Request, veri: HesapKur, db: Session = Depends(get_db)):
     """Davet tokenı ile ilk şifre belirleme."""
     import hashlib
     from datetime import datetime
@@ -134,7 +135,8 @@ def hesap_kur(veri: HesapKur, db: Session = Depends(get_db)):
 
 
 @router.post("/sifre-sifirla-iste")
-def sifre_sifirla_iste(veri: SifreSifirlaIste, db: Session = Depends(get_db)):
+@limiter.limit("3/minute")
+def sifre_sifirla_iste(request: Request, veri: SifreSifirlaIste, db: Session = Depends(get_db)):
     """E-posta adresine şifre sıfırlama linki gönderir."""
     import secrets, hashlib, os
     from datetime import datetime, timedelta
@@ -163,7 +165,8 @@ def sifre_sifirla_iste(veri: SifreSifirlaIste, db: Session = Depends(get_db)):
 
 
 @router.post("/sifre-sifirla-tamamla")
-def sifre_sifirla_tamamla(veri: SifreSifralaTokenle, db: Session = Depends(get_db)):
+@limiter.limit("3/minute")
+def sifre_sifirla_tamamla(request: Request, veri: SifreSifralaTokenle, db: Session = Depends(get_db)):
     """Token ile yeni şifre belirler."""
     import hashlib
     from datetime import datetime

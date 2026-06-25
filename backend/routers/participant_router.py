@@ -494,7 +494,8 @@ def envanter_ata(
         db.flush()
 
         token = str(uuid.uuid4())
-        link = DavetLinki(atama_id=atama.id, token=token)
+        link = DavetLinki(atama_id=atama.id, token=token,
+                          son_kullanim_tarihi=datetime.utcnow() + timedelta(days=30))
         db.add(link)
         db.flush()
 
