@@ -186,7 +186,10 @@ export default function KatilimciProfil() {
                 <div className="py-8 text-center text-sm text-gray-400">Henüz envanter atanmamış</div>
               ) : (
                 <div className="divide-y divide-gray-100">
-                  {k.atamalar.map(a => {
+                  {[...k.atamalar].sort((a, b) => {
+                    const SIRA = { liderlik_stili: 1, kisisel_etkilesim: 2, problem_cozme: 3, motivasyon: 4 }
+                    return (SIRA[a.envanter_tipi] || 99) - (SIRA[b.envanter_tipi] || 99)
+                  }).map(a => {
                     const b = ENV[a.envanter_tipi] || { kisalt: '?', renk: 'bg-gray-100 text-gray-600', nokta: 'bg-gray-400' }
                     const d = DURUM[a.durum] || { label: a.durum, cls: 'bg-gray-100 text-gray-600' }
                     const yuzde = a.durum === 'tamamlandi' || a.durum === 'raporlandi' ? 100 : a.durum === 'devam_ediyor' ? 50 : 0
