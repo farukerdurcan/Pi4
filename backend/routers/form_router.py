@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from database import get_db
 from models import DavetLinki, Atama, AtamaDurumu, FormYaniti, Katilimci, PuanSonucu, Firma
 from services.puanlama import puan_hesapla
+from services.email_service import tamamlandi_emaili_olustur
 
 router = APIRouter(prefix="/api/form", tags=["Form"])
 
@@ -134,6 +135,20 @@ def yanit_kaydet(
             print(f"Puanlama hatası: {e}")
 
         mesaj = "Form başarıyla tamamlandı"
+
+        # Tamamlandı bildirim e-postası
+        try:
+            katilimci = atama.katilimci
+            firma_adi = katilimci.firma.ad if katilimci.firma else ""
+            envanter_adi = ENVANTER_ADLARI.get(atama.envanter_tipi.value, atama.envanter_tipi.value)
+            tamamlandi_emaili_olustur(
+                alici_email=katilimci.email,
+                alici_ad=katilimci.tam_ad,
+                envanter_adi=envanter_adi,
+                firma_adi=firma_adi,
+            )
+        except Exception as e:
+            print(f"Tamamlandı e-postası gönderilemedi: {e}")
     else:
         if atama.durum == AtamaDurumu.gonderildi:
             atama.durum = AtamaDurumu.devam_ediyor

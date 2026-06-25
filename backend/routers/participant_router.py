@@ -303,7 +303,8 @@ def katilimci_ekle(
                 envanter_adi=envanter_adi,
                 form_linki=form_linki,
                 firma_adi=firma_adi,
-                dil=dil
+                dil=dil,
+                envanter_tipi=tip.value,
             )
 
     db.commit()
@@ -505,7 +506,8 @@ def envanter_ata(
             envanter_adi=envanter_adi,
             form_linki=form_linki,
             firma_adi=_firma_adini_getir(kullanici.firma_id, db),
-            dil=veri.dil
+            dil=veri.dil,
+            envanter_tipi=tip.value,
         )
 
     db.commit()
