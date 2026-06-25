@@ -14,7 +14,8 @@ from limiter import limiter
 
 router = APIRouter(prefix="/api/auth", tags=["Kimlik Doğrulama"])
 
-# Token yanıtı için veri şeması
+# ─── Pydantic şemaları ───────────────────────────────────────────────────────
+
 class TokenYaniti(BaseModel):
     access_token: str
     token_type: str
@@ -33,6 +34,23 @@ class KullaniciBilgisi(BaseModel):
     class Config:
         from_attributes = True
 
+class SifreDegistir(BaseModel):
+    mevcut_sifre: str
+    yeni_sifre: str
+
+class HesapKur(BaseModel):
+    token: str
+    yeni_sifre: str
+
+class SifreSifirlaIste(BaseModel):
+    email: str
+
+class SifreSifralaTokenle(BaseModel):
+    token: str
+    yeni_sifre: str
+
+# ─── Endpoint'ler ────────────────────────────────────────────────────────────
+
 @router.post("/login", response_model=TokenYaniti)
 @limiter.limit("5/minute")
 async def giris_yap(
@@ -40,10 +58,6 @@ async def giris_yap(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db)
 ):
-    """
-    Kullanıcı girişi.
-    E-posta ve şifre ile giriş yapılır, JWT token döner.
-    """
     kullanici = kullanici_dogrula(db, form_data.username, form_data.password)
     if not kullanici:
         raise HTTPException(
@@ -72,14 +86,10 @@ async def giris_yap(
         kullanici_email=kullanici.email
     )
 
+
 @router.get("/ben", response_model=KullaniciBilgisi)
 async def benim_bilgilerim(kullanici: User = Depends(aktif_kullanici)):
     return kullanici
-
-
-class SifreDegistir(BaseModel):
-    mevcut_sifre: str
-    yeni_sifre: str
 
 
 @router.post("/sifre-degistir")
@@ -98,6 +108,31 @@ async def sifre_degistir(
     return {"mesaj": "Şifre başarıyla güncellendi"}
 
 
+@router.post("/hesap-kur")
+def hesap_kur(veri: HesapKur, db: Session = Depends(get_db)):
+    """Davet tokenı ile ilk şifre belirleme."""
+    import hashlib
+    from datetime import datetime
+
+    if len(veri.yeni_sifre) < 6:
+        raise HTTPException(status_code=400, detail="Şifre en az 6 karakter olmalı")
+
+    token_hash = hashlib.sha256(veri.token.encode()).hexdigest()
+    kullanici = db.query(User).filter(
+        User.davet_token_hash == token_hash,
+        User.davet_token_son_kullanim > datetime.utcnow()
+    ).first()
+
+    if not kullanici:
+        raise HTTPException(status_code=400, detail="Geçersiz veya süresi dolmuş davet linki")
+
+    kullanici.hashed_password = sifreyi_hashle(veri.yeni_sifre)
+    kullanici.davet_token_hash = None
+    kullanici.davet_token_son_kullanim = None
+    db.commit()
+    return {"mesaj": "Şifreniz başarıyla belirlendi. Giriş yapabilirsiniz."}
+
+
 @router.post("/sifre-sifirla-iste")
 def sifre_sifirla_iste(veri: SifreSifirlaIste, db: Session = Depends(get_db)):
     """E-posta adresine şifre sıfırlama linki gönderir."""
@@ -106,7 +141,6 @@ def sifre_sifirla_iste(veri: SifreSifirlaIste, db: Session = Depends(get_db)):
     from services.email_service import sifre_sifirla_emaili_olustur
 
     kullanici = db.query(User).filter(User.email == veri.email).first()
-    # Güvenlik: hesap yoksa da aynı mesajı döndür
     if kullanici and kullanici.aktif:
         token = secrets.token_urlsafe(32)
         token_hash = hashlib.sha256(token.encode()).hexdigest()
@@ -151,42 +185,3 @@ def sifre_sifirla_tamamla(veri: SifreSifralaTokenle, db: Session = Depends(get_d
     kullanici.sifirla_token_son_kullanim = None
     db.commit()
     return {"mesaj": "Şifreniz güncellendi. Giriş yapabilirsiniz."}
-
-
-class SifreSifirlaIste(BaseModel):
-    email: str
-
-
-class SifreSifralaTokenle(BaseModel):
-    token: str
-    yeni_sifre: str
-
-
-class HesapKur(BaseModel):
-    token: str
-    yeni_sifre: str
-
-
-@router.post("/hesap-kur")
-def hesap_kur(veri: HesapKur, db: Session = Depends(get_db)):
-    """Davet tokenı ile ilk şifre belirleme."""
-    import hashlib
-    from datetime import datetime
-
-    if len(veri.yeni_sifre) < 6:
-        raise HTTPException(status_code=400, detail="Şifre en az 6 karakter olmalı")
-
-    token_hash = hashlib.sha256(veri.token.encode()).hexdigest()
-    kullanici = db.query(User).filter(
-        User.davet_token_hash == token_hash,
-        User.davet_token_son_kullanim > datetime.utcnow()
-    ).first()
-
-    if not kullanici:
-        raise HTTPException(status_code=400, detail="Geçersiz veya süresi dolmuş davet linki")
-
-    kullanici.hashed_password = sifreyi_hashle(veri.yeni_sifre)
-    kullanici.davet_token_hash = None
-    kullanici.davet_token_son_kullanim = None
-    db.commit()
-    return {"mesaj": "Şifreniz başarıyla belirlendi. Giriş yapabilirsiniz."}
