@@ -94,6 +94,15 @@ def _kolonlari_guncelle(db):
         db.rollback()
         print(f"  ⚠️ katilimcilar bileşik unique: {e}")
 
+    # hashed_password NOT NULL kısıtını kaldır (davet akışı için nullable olmalı)
+    try:
+        db.execute(text("ALTER TABLE users ALTER COLUMN hashed_password DROP NOT NULL"))
+        db.commit()
+        print("  ✅ users.hashed_password NOT NULL kısıtı kaldırıldı")
+    except Exception as e:
+        db.rollback()
+        print(f"  ⚠️ users.hashed_password NOT NULL: {e}")
+
     # PostgreSQL enum'una super_admin değeri ekle (yoksa)
     try:
         db.execute(text("ALTER TYPE userrole ADD VALUE IF NOT EXISTS 'super_admin'"))
