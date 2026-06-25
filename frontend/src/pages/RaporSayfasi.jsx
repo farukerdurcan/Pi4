@@ -1008,7 +1008,10 @@ function PrintEnvanterKart({ rapor }) {
 }
 
 function ButunlesikPrint({ veri, katilimci }) {
-  const { raporlar, tamamlanan_sayi, toplam_atama } = veri
+  const { tamamlanan_sayi, toplam_atama } = veri
+  const raporlar = [...(veri.raporlar || [])].sort(
+    (a, b) => (ENVANTER_SIRASI[a.envanter_tipi] || 99) - (ENVANTER_SIRASI[b.envanter_tipi] || 99)
+  )
   const yuzde = toplam_atama > 0 ? Math.round(tamamlanan_sayi / toplam_atama * 100) : 0
   const tarih = new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })
 
@@ -1075,7 +1078,10 @@ function ButunlesikPrint({ veri, katilimci }) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function ButunlesikIcerik({ veri }) {
-  const { raporlar, tamamlanan_sayi, toplam_atama } = veri
+  const { tamamlanan_sayi, toplam_atama } = veri
+  const raporlar = [...(veri.raporlar || [])].sort(
+    (a, b) => (ENVANTER_SIRASI[a.envanter_tipi] || 99) - (ENVANTER_SIRASI[b.envanter_tipi] || 99)
+  )
   const yuzde = toplam_atama > 0 ? Math.round(tamamlanan_sayi / toplam_atama * 100) : 0
 
   // Her envanter için tek satır özet

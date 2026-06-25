@@ -170,7 +170,11 @@ def butunlesik_rapor(
         if a.durum in [AtamaDurumu.tamamlandi, AtamaDurumu.raporlandi]
     ]
 
-    raporlar = [bireysel_rapor_olustur(a, db) for a in tamamlanan_atamalar]
+    _SIRA = {"liderlik_stili": 1, "kisisel_etkilesim": 2, "problem_cozme": 3, "motivasyon": 4}
+    raporlar = sorted(
+        [bireysel_rapor_olustur(a, db) for a in tamamlanan_atamalar],
+        key=lambda r: _SIRA.get(r.get("envanter_tipi", ""), 99)
+    )
 
     # Radar grafik için normalize edilmiş veri (0-100 arası)
     radar_verisi = {}
