@@ -886,141 +886,187 @@ function PrintEnvanterKart({ rapor }) {
   if (!rapor || rapor.puan_yok) return null
   const tip = rapor.envanter_tipi
   const meta = rapor.puanlar || {}
-  const p   = meta.puanlar || {}
+  const p = meta.puanlar || {}
   const renk = PRINT_RENKLER[tip] || '#6b7280'
 
   const anaBilgi = {
-    liderlik_stili:    { birincil: meta.birincil_stil,  ikincil: meta.ikincil_stil },
-    motivasyon:        { birincil: meta.temel_ihtiyac,  ikincil: meta.motivasyon_seviyesi },
+    liderlik_stili:    { birincil: meta.birincil_stil,  ikincil: meta.baskin_var ? 'Baskın' : meta.ikincil_stil || '' },
+    motivasyon:        { birincil: meta.temel_ihtiyac,  ikincil: `${meta.motivasyon_seviyesi || ''} motivasyon` },
     kisisel_etkilesim: { birincil: meta.profil_kodu,    ikincil: meta.birincil_stil },
-    problem_cozme:     { birincil: meta.birincil_tarz,  ikincil: meta.seviyeler?.[meta.birincil_tarz?.toLowerCase()] },
+    problem_cozme:     { birincil: meta.birincil_tarz,  ikincil: meta.seviyeler?.[meta.birincil_tarz?.toLowerCase()] || '' },
   }[tip] || {}
 
   const barlar = {
-    liderlik_stili:    [['Cesur',p.cesur,32],['Etkileyici',p.etkileyici,32],['Sempatik',p.sempatik,32],['Teknik',p.teknik,32]],
-    motivasyon:        [['Başarı',p.basari,40],['Etkileme',p.etkileme,40],['İlişki',p.iliski,40],['Güvenlik',p.guvenlik,40]],
-    kisisel_etkilesim: (meta.sirali_stiller||[]).map(s=>[s.ad,s.puan,50]),
-    problem_cozme:     [['İdealist',p.idealist,100],['Aktivist',p.aktivist,100],['Realist',p.realist,100]],
+    liderlik_stili:    [['Cesur', p.cesur, 32], ['Etkileyici', p.etkileyici, 32], ['Sempatik', p.sempatik, 32], ['Teknik', p.teknik, 32]],
+    motivasyon:        [['Başarı', p.basari, 40], ['Etkileme', p.etkileme, 40], ['İlişki', p.iliski, 40], ['Güvenlik', p.guvenlik, 40]],
+    kisisel_etkilesim: (meta.sirali_stiller || []).map(s => [s.ad, s.puan, 50]),
+    problem_cozme:     [['İdealist', p.idealist, 100], ['Aktivist', p.aktivist, 100], ['Realist', p.realist, 100]],
   }[tip] || []
 
   const cols = barlar.length === 3 ? 3 : 2
 
+  const keYorum = tip === 'kisisel_etkilesim' && meta.profil_kodu ? ke_profil_yorum(meta.profil_kodu) : null
+
   return (
-    <div style={{ border:'1px solid #e5e7eb', borderRadius:8, padding:10, pageBreakInside:'avoid', breakInside:'avoid' }}>
+    <div style={{
+      border: '1px solid #e5e7eb',
+      borderLeft: `4px solid ${renk}`,
+      borderRadius: 8,
+      overflow: 'hidden',
+      pageBreakInside: 'avoid',
+      breakInside: 'avoid',
+      background: '#fff',
+    }}>
       {/* Başlık */}
-      <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:6, paddingBottom:5, borderBottom:'1px solid #f3f4f6' }}>
-        <div style={{ width:22, height:22, borderRadius:5, background:renk, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-          <span style={{ color:'white', fontSize:8, fontWeight:700 }}>{PRINT_KISALT[tip]||'?'}</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderBottom: '1px solid #f3f4f6', background: '#fafafa' }}>
+        <div style={{ width: 24, height: 24, borderRadius: 5, background: renk, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <span style={{ color: 'white', fontSize: 8, fontWeight: 700 }}>{PRINT_KISALT[tip] || '?'}</span>
         </div>
-        <span style={{ fontSize:10.5, fontWeight:700, color:'#111' }}>{rapor.envanter_adi}</span>
+        <span style={{ fontSize: 11, fontWeight: 700, color: '#111', flex: 1 }}>{rapor.envanter_adi}</span>
         {rapor.tamamlanma_tarihi && (
-          <span style={{ fontSize:8, color:'#999', marginLeft:'auto' }}>
-            {new Date(rapor.tamamlanma_tarihi).toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:'numeric'})}
+          <span style={{ fontSize: 8, color: '#aaa' }}>
+            {new Date(rapor.tamamlanma_tarihi).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' })}
           </span>
         )}
       </div>
 
-      {/* Ana metrik */}
-      <div style={{ marginBottom:7 }}>
-        <span style={{ fontSize:14, fontWeight:700, color:'#111' }}>{anaBilgi.birincil}</span>
-        {anaBilgi.ikincil && <span style={{ fontSize:9, color:'#666', marginLeft:5 }}>· {anaBilgi.ikincil}</span>}
-      </div>
-
-      {/* Bar'lar — yatay grid */}
-      <div style={{ display:'grid', gridTemplateColumns:`repeat(${cols},1fr)`, gap:'0 10px', marginBottom:7 }}>
-        {barlar.map(([lbl,puan,maks]) => (
-          <PrintBar key={lbl} label={lbl} puan={puan} maks={maks} renk={renk} />
-        ))}
-      </div>
-
-      {/* Güçlü + Gelişim */}
-      {(rapor.guclu_yonler?.length > 0 || rapor.gelisim_alanlari?.length > 0) && (
-        <div style={{ display:'flex', gap:8, paddingTop:6, borderTop:'1px solid #f3f4f6' }}>
-          {rapor.guclu_yonler?.length > 0 && (
-            <div style={{ flex:1 }}>
-              <span style={{ fontSize:8, fontWeight:700, color:'#16a34a', display:'block', marginBottom:2 }}>💪 Güçlü yönler</span>
-              <div style={{ display:'flex', flexWrap:'wrap', gap:2 }}>
-                {rapor.guclu_yonler.map(g=>(
-                  <span key={g} style={{ fontSize:7.5, background:'#dcfce7', color:'#15803d', padding:'1px 5px', borderRadius:10 }}>{g}</span>
-                ))}
-              </div>
-            </div>
-          )}
-          {rapor.gelisim_alanlari?.length > 0 && (
-            <div style={{ flex:1 }}>
-              <span style={{ fontSize:8, fontWeight:700, color:'#ca8a04', display:'block', marginBottom:2 }}>🎯 Gelişim alanları</span>
-              <div style={{ display:'flex', flexWrap:'wrap', gap:2 }}>
-                {rapor.gelisim_alanlari.map(g=>(
-                  <span key={g} style={{ fontSize:7.5, background:'#fef9c3', color:'#854d0e', padding:'1px 5px', borderRadius:10 }}>{g}</span>
-                ))}
-              </div>
-            </div>
-          )}
+      <div style={{ padding: 10 }}>
+        {/* Ana metrik */}
+        <div style={{ marginBottom: 8, paddingBottom: 8, borderBottom: '1px solid #f3f4f6' }}>
+          <span style={{ fontSize: 16, fontWeight: 800, color: renk }}>{anaBilgi.birincil}</span>
+          {anaBilgi.ikincil && <span style={{ fontSize: 9, color: '#888', marginLeft: 6 }}>{anaBilgi.ikincil}</span>}
         </div>
-      )}
 
-      {/* Profil yorumları */}
-      {tip === 'liderlik_stili' && rapor.yonetim_onerileri?.length > 0 && (
-        <div style={{ marginTop:6, paddingTop:6, borderTop:'1px solid #f3f4f6' }}>
-          <span style={{ fontSize:8, fontWeight:700, color:'#1d4ed8', display:'block', marginBottom:3 }}>💡 Yönetim önerileri</span>
-          <div style={{ display:'flex', flexDirection:'column', gap:2 }}>
-            {rapor.yonetim_onerileri.map((o,i) => (
-              <div key={i} style={{ display:'flex', gap:4 }}>
-                <span style={{ fontSize:7.5, color:'#3b82f6', flexShrink:0 }}>→</span>
-                <span style={{ fontSize:7.5, color:'#1e3a8a', lineHeight:1.4 }}>{o}</span>
+        {/* Barlar */}
+        {barlar.length > 0 && (
+          <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: '0 12px', marginBottom: 8 }}>
+            {barlar.map(([lbl, puan, maks]) => (
+              <PrintBar key={lbl} label={lbl} puan={puan} maks={maks} renk={renk} />
+            ))}
+          </div>
+        )}
+
+        {/* Güçlü + Gelişim */}
+        {(rapor.guclu_yonler?.length > 0 || rapor.gelisim_alanlari?.length > 0) && (
+          <div style={{ display: 'flex', gap: 8, paddingTop: 7, borderTop: '1px solid #f3f4f6', marginTop: 2 }}>
+            {rapor.guclu_yonler?.length > 0 && (
+              <div style={{ flex: 1 }}>
+                <span style={{ fontSize: 8, fontWeight: 700, color: '#16a34a', display: 'block', marginBottom: 3 }}>Güçlü yönler</span>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+                  {rapor.guclu_yonler.map(g => (
+                    <span key={g} style={{ fontSize: 7.5, background: '#dcfce7', color: '#15803d', padding: '2px 6px', borderRadius: 10 }}>{g}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {rapor.gelisim_alanlari?.length > 0 && (
+              <div style={{ flex: 1 }}>
+                <span style={{ fontSize: 8, fontWeight: 700, color: '#ca8a04', display: 'block', marginBottom: 3 }}>Gelişim alanları</span>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+                  {rapor.gelisim_alanlari.map(g => (
+                    <span key={g} style={{ fontSize: 7.5, background: '#fef9c3', color: '#854d0e', padding: '2px 6px', borderRadius: 10 }}>{g}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Liderlik — yönetim önerileri (ilk 3) */}
+        {tip === 'liderlik_stili' && rapor.yonetim_onerileri?.length > 0 && (
+          <div style={{ marginTop: 7, paddingTop: 7, borderTop: '1px solid #f3f4f6' }}>
+            <span style={{ fontSize: 8, fontWeight: 700, color: '#1d4ed8', display: 'block', marginBottom: 3 }}>Yönetim önerileri</span>
+            {rapor.yonetim_onerileri.slice(0, 3).map((o, i) => (
+              <div key={i} style={{ display: 'flex', gap: 4, marginBottom: 2 }}>
+                <span style={{ fontSize: 7.5, color: '#3b82f6', flexShrink: 0 }}>→</span>
+                <span style={{ fontSize: 7.5, color: '#1e3a8a', lineHeight: 1.4 }}>{o}</span>
               </div>
             ))}
           </div>
-        </div>
-      )}
+        )}
 
-      {tip === 'motivasyon' && meta.motivasyon_aciklama && (
-        <div style={{ marginTop:6, paddingTop:6, borderTop:'1px solid #f3f4f6' }}>
-          <span style={{ fontSize:8, fontWeight:700, color:'#15803d', display:'block', marginBottom:2 }}>📌 Değerlendirme</span>
-          <p style={{ fontSize:7.5, color:'#374151', lineHeight:1.5, margin:0 }}>{meta.motivasyon_aciklama}</p>
-        </div>
-      )}
-
-      {tip === 'kisisel_etkilesim' && meta.profil_kodu && (() => {
-        const yorum = ke_profil_yorum(meta.profil_kodu)
-        if (!yorum) return null
-        return (
-          <div style={{ marginTop:6, paddingTop:6, borderTop:'1px solid #f3f4f6' }}>
-            <span style={{ fontSize:8, fontWeight:700, color: yorum.olumlu ? '#15803d' : '#6b7280', display:'block', marginBottom:2 }}>
-              {yorum.olumlu ? '✅' : '📌'} Profil yorumu
-            </span>
-            <p style={{ fontSize:7.5, color:'#374151', lineHeight:1.5, margin:0 }}>{yorum.mesaj}</p>
+        {/* Motivasyon açıklama */}
+        {tip === 'motivasyon' && meta.motivasyon_aciklama && (
+          <div style={{ marginTop: 7, paddingTop: 7, borderTop: '1px solid #f3f4f6' }}>
+            <span style={{ fontSize: 8, fontWeight: 700, color: '#15803d', display: 'block', marginBottom: 2 }}>Değerlendirme</span>
+            <p style={{ fontSize: 7.5, color: '#374151', lineHeight: 1.5, margin: 0 }}>{meta.motivasyon_aciklama}</p>
           </div>
-        )
-      })()}
+        )}
 
-      {tip === 'kisisel_etkilesim' && meta.iletisim_aciklama && (
-        <div style={{ marginTop:5 }}>
-          <p style={{ fontSize:7.5, color:'#6b7280', lineHeight:1.4, margin:0, fontStyle:'italic' }}>{meta.iletisim_aciklama}</p>
-        </div>
-      )}
+        {/* KE profil yorumu */}
+        {keYorum && (
+          <div style={{ marginTop: 7, paddingTop: 7, borderTop: '1px solid #f3f4f6' }}>
+            <span style={{ fontSize: 8, fontWeight: 700, color: keYorum.olumlu ? '#15803d' : '#6b7280', display: 'block', marginBottom: 2 }}>
+              {keYorum.olumlu ? '✅' : '📌'} Profil yorumu
+            </span>
+            <p style={{ fontSize: 7.5, color: '#374151', lineHeight: 1.5, margin: 0 }}>{keYorum.mesaj}</p>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
 
-function ButunlesikPrint({ veri }) {
+function ButunlesikPrint({ veri, katilimci }) {
   const { raporlar, tamamlanan_sayi, toplam_atama } = veri
   const yuzde = toplam_atama > 0 ? Math.round(tamamlanan_sayi / toplam_atama * 100) : 0
+  const tarih = new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })
+
   return (
-    <div className="print-only" style={{ fontFamily:'-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif' }}>
-      {/* Özet şeridi */}
-      <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:10, padding:'6px 10px', background:'#f9fafb', borderRadius:8, border:'1px solid #e5e7eb' }}>
-        <span style={{ fontSize:10, color:'#555', flexShrink:0 }}>
-          <strong style={{ color:'#111', fontSize:13 }}>{tamamlanan_sayi}</strong>/{toplam_atama} envanter tamamlandı
-        </span>
-        <div style={{ flex:1, height:5, background:'#e5e7eb', borderRadius:3, overflow:'hidden' }}>
-          <div style={{ width:`${yuzde}%`, height:'100%', background:'#1d4ed8', borderRadius:3 }} />
+    <div className="print-only" style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
+      {/* Kapak başlığı */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14, paddingBottom: 12, borderBottom: '2px solid #1d4ed8' }}>
+        <div>
+          <div style={{ fontSize: 8.5, color: '#6b7280', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 4 }}>PI Envanter — Bütünleşik Rapor</div>
+          <div style={{ fontSize: 22, fontWeight: 800, color: '#111', lineHeight: 1.2 }}>
+            {katilimci?.ad} {katilimci?.soyad}
+          </div>
+          {(katilimci?.pozisyon || katilimci?.departman) && (
+            <div style={{ fontSize: 11, color: '#6b7280', marginTop: 3 }}>
+              {katilimci.pozisyon || katilimci.departman}
+            </div>
+          )}
         </div>
-        <span style={{ fontSize:10, fontWeight:700, color:'#111', flexShrink:0 }}>%{yuzde}</span>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontSize: 8.5, color: '#9ca3af', marginBottom: 6 }}>{tarih}</div>
+          <div style={{ display: 'flex', gap: 5, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+            {raporlar.filter(r => !r.puan_yok).map(r => (
+              <span key={r.envanter_tipi} style={{
+                fontSize: 8,
+                fontWeight: 700,
+                color: PRINT_RENKLER[r.envanter_tipi] || '#6b7280',
+                background: `${PRINT_RENKLER[r.envanter_tipi]}18`,
+                padding: '2px 8px',
+                borderRadius: 10,
+                border: `1px solid ${PRINT_RENKLER[r.envanter_tipi]}35`,
+              }}>{PRINT_KISALT[r.envanter_tipi]}</span>
+            ))}
+          </div>
+        </div>
       </div>
-      {/* 2×2 grid */}
-      <div style={{ display:'grid', gridTemplateColumns: raporlar.length === 1 ? '1fr' : '1fr 1fr', gap:10 }}>
+
+      {/* İlerleme özeti */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14, padding: '7px 12px', background: '#f9fafb', borderRadius: 8, border: '1px solid #e5e7eb' }}>
+        <span style={{ fontSize: 10, color: '#555', flexShrink: 0 }}>
+          <strong style={{ color: '#111', fontSize: 14 }}>{tamamlanan_sayi}</strong>
+          <span style={{ color: '#9ca3af', fontSize: 10 }}>/{toplam_atama}</span>
+          <span style={{ marginLeft: 5 }}>envanter tamamlandı</span>
+        </span>
+        <div style={{ flex: 1, height: 6, background: '#e5e7eb', borderRadius: 3, overflow: 'hidden' }}>
+          <div style={{ width: `${yuzde}%`, height: '100%', background: '#1d4ed8', borderRadius: 3 }} />
+        </div>
+        <span style={{ fontSize: 12, fontWeight: 800, color: '#1d4ed8', flexShrink: 0 }}>%{yuzde}</span>
+      </div>
+
+      {/* Envanter kartları — 2×2 */}
+      <div style={{ display: 'grid', gridTemplateColumns: raporlar.length === 1 ? '1fr' : '1fr 1fr', gap: 10 }}>
         {raporlar.map(r => <PrintEnvanterKart key={r.envanter_tipi} rapor={r} />)}
+      </div>
+
+      {/* Footer */}
+      <div style={{ marginTop: 14, paddingTop: 10, borderTop: '1px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span style={{ fontSize: 8, color: '#9ca3af' }}>PI Envanter Sistemi · TATKO</span>
+        <span style={{ fontSize: 8, color: '#d1d5db' }}>{katilimci?.ad} {katilimci?.soyad} · {tarih}</span>
       </div>
     </div>
   )
@@ -1030,46 +1076,94 @@ function ButunlesikPrint({ veri }) {
 
 function ButunlesikIcerik({ veri }) {
   const { raporlar, tamamlanan_sayi, toplam_atama } = veri
+  const yuzde = toplam_atama > 0 ? Math.round(tamamlanan_sayi / toplam_atama * 100) : 0
+
+  // Her envanter için tek satır özet
+  const profilKartlari = raporlar.map(rapor => {
+    const tip = rapor.envanter_tipi
+    const meta = rapor.puanlar || {}
+    const printRenk = PRINT_RENKLER[tip] || '#6b7280'
+    const envRenk = ENV_RENK[tip] || {}
+    let anahtar = '—'
+    let alt = ''
+    if (!rapor.puan_yok) {
+      switch (tip) {
+        case 'liderlik_stili':    anahtar = meta.birincil_stil || '—';  alt = meta.baskin_var ? 'Baskın' : ''; break
+        case 'motivasyon':        anahtar = meta.temel_ihtiyac || '—';  alt = meta.motivasyon_seviyesi || ''; break
+        case 'kisisel_etkilesim': anahtar = meta.profil_kodu || '—';    alt = meta.birincil_stil || ''; break
+        case 'problem_cozme':     anahtar = meta.birincil_tarz || '—';  alt = ''; break
+        default: break
+      }
+    }
+    return { tip, ad: rapor.envanter_adi, anahtar, alt, printRenk, envRenk, tamamlandi: !rapor.puan_yok }
+  })
 
   return (
     <div className="space-y-6">
 
-      {/* Özet kart */}
-      <div className="bg-white rounded-xl border border-gray-200 p-5">
-        <div className="text-xs text-gray-400 mb-3">Genel durum</div>
-        <div className="flex gap-4">
-          <div className="text-center">
-            <div className="text-2xl font-medium text-gray-900">{tamamlanan_sayi}</div>
-            <div className="text-xs text-gray-400 mt-0.5">Tamamlanan</div>
-          </div>
-          <div className="w-px bg-gray-100" />
-          <div className="text-center">
-            <div className="text-2xl font-medium text-gray-400">{toplam_atama - tamamlanan_sayi}</div>
-            <div className="text-xs text-gray-400 mt-0.5">Bekleyen</div>
-          </div>
-          <div className="w-px bg-gray-100" />
-          <div className="flex-1">
-            <div className="text-xs text-gray-400 mb-1.5">Tamamlanma oranı</div>
-            <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-tatko rounded-full"
-                style={{ width: `${toplam_atama > 0 ? Math.round(tamamlanan_sayi / toplam_atama * 100) : 0}%` }}
-              />
+      {/* Profil özeti — 4 mini kart */}
+      <div>
+        <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Profil Özeti</div>
+        <div className="grid grid-cols-2 gap-3">
+          {profilKartlari.map(k => (
+            <div key={k.tip}
+              className={`bg-white rounded-xl border overflow-hidden flex transition-opacity ${!k.tamamlandi ? 'opacity-50' : ''}`}
+              style={{ borderColor: k.tamamlandi ? `${k.printRenk}35` : '#e5e7eb' }}
+            >
+              <div className="w-1 flex-shrink-0" style={{ background: k.tamamlandi ? k.printRenk : '#e5e7eb' }} />
+              <div className="p-4 flex-1 min-w-0">
+                <div className="text-xs font-medium mb-1.5" style={{ color: k.tamamlandi ? k.printRenk : '#9ca3af' }}>
+                  {k.ad}
+                </div>
+                {k.tamamlandi ? (
+                  <div className="flex items-baseline gap-2 min-w-0">
+                    <div className="text-base font-bold text-gray-900 truncate">{k.anahtar}</div>
+                    {k.alt && <div className="text-xs text-gray-400 flex-shrink-0">{k.alt}</div>}
+                  </div>
+                ) : (
+                  <div className="text-sm text-gray-300">Bekleniyor</div>
+                )}
+              </div>
             </div>
-            <div className="text-xs text-gray-500 mt-1">
-              {toplam_atama > 0 ? Math.round(tamamlanan_sayi / toplam_atama * 100) : 0}%
-            </div>
-          </div>
+          ))}
         </div>
       </div>
 
-      {/* Tüm envanterler */}
-      {raporlar.map((rapor, i) => {
+      {/* İlerleme */}
+      <div className="bg-white rounded-xl border border-gray-200 p-5">
+        <div className="flex items-center justify-between mb-3">
+          <div className="text-sm font-medium text-gray-700">Tamamlanma durumu</div>
+          <div className="text-xs text-gray-400">{tamamlanan_sayi}/{toplam_atama} envanter</div>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="flex-1 h-2.5 bg-gray-100 rounded-full overflow-hidden">
+            <div className="h-full bg-tatko rounded-full transition-all duration-700" style={{ width: `${yuzde}%` }} />
+          </div>
+          <div className="text-sm font-bold text-tatko w-10 text-right">%{yuzde}</div>
+        </div>
+        <div className="flex gap-4 mt-3">
+          <div className="flex items-center gap-1.5">
+            <div className="w-2 h-2 rounded-full bg-tatko" />
+            <span className="text-xs text-gray-500">{tamamlanan_sayi} tamamlandı</span>
+          </div>
+          {toplam_atama - tamamlanan_sayi > 0 && (
+            <div className="flex items-center gap-1.5">
+              <div className="w-2 h-2 rounded-full bg-gray-200" />
+              <span className="text-xs text-gray-400">{toplam_atama - tamamlanan_sayi} bekliyor</span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Envanter detayları */}
+      {raporlar.map(rapor => {
         const r = ENV_RENK[rapor.envanter_tipi] || { bg: 'bg-gray-100', text: 'text-gray-700', kisalt: '?' }
+        const printRenk = PRINT_RENKLER[rapor.envanter_tipi] || '#e5e7eb'
         return (
-          <div key={rapor.envanter_tipi} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div key={rapor.envanter_tipi} className="bg-white rounded-xl border border-gray-200 overflow-hidden"
+            style={{ borderLeft: `4px solid ${printRenk}` }}>
             <div className="px-5 py-3.5 border-b border-gray-100 flex items-center gap-3">
-              <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-medium ${r.bg} ${r.text}`}>
+              <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-medium flex-shrink-0 ${r.bg} ${r.text}`}>
                 {r.kisalt}
               </div>
               <div>
@@ -1151,7 +1245,7 @@ export default function RaporSayfasi() {
 
   return (
     <Layout>
-      <div className="no-print h-13 bg-white border-b border-gray-200 flex items-center justify-between px-6 flex-shrink-0">
+      <div className="no-print h-13 bg-white border-b border-slate-200 flex items-center justify-between px-6 flex-shrink-0">
         <div className="flex items-center gap-2 text-sm">
           <button onClick={() => navigate('/katilimcilar')} className="text-gray-400 hover:text-gray-600">Katılımcılar</button>
           <span className="text-gray-300">/</span>
@@ -1228,21 +1322,19 @@ export default function RaporSayfasi() {
 
         <div className="flex-1 overflow-auto p-6 print-area">
 
-          {/* Yazdırma başlığı — ekranda gizli, baskıda görünür */}
-          <div className="print-only mb-6 pb-4 border-b border-gray-300">
-            <div className="text-xs text-gray-500 mb-1">TATKO PI Envanter Raporu</div>
-            <div className="text-lg font-medium text-gray-900">{katilimci.ad} {katilimci.soyad}</div>
-            {(katilimci.pozisyon || katilimci.departman) && (
-              <div className="text-sm text-gray-500">{katilimci.pozisyon || katilimci.departman}</div>
-            )}
-            <div className="text-sm text-gray-400 mt-1">
-              {goruntule === 'butunlesik'
-                ? 'Bütünleşik Rapor'
-                : aktifAtama?.envanter_adi
-                  ? `${aktifAtama.envanter_adi} — Bireysel Rapor`
-                  : ''}
+          {/* Yazdırma başlığı — sadece bireysel modda gösterilir */}
+          {goruntule === 'bireysel' && (
+            <div className="print-only mb-6 pb-4 border-b border-gray-300">
+              <div className="text-xs text-gray-500 mb-1">PI Envanter — Bireysel Rapor</div>
+              <div className="text-lg font-medium text-gray-900">{katilimci.ad} {katilimci.soyad}</div>
+              {(katilimci.pozisyon || katilimci.departman) && (
+                <div className="text-sm text-gray-500">{katilimci.pozisyon || katilimci.departman}</div>
+              )}
+              <div className="text-sm text-gray-400 mt-1">
+                {aktifAtama?.envanter_adi ? `${aktifAtama.envanter_adi}` : ''}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Bütünleşik görünüm */}
           {goruntule === 'butunlesik' && (
@@ -1265,7 +1357,7 @@ export default function RaporSayfasi() {
                 <div className="no-print">
                   <ButunlesikIcerik veri={butunlesikVeri} />
                 </div>
-                <ButunlesikPrint veri={butunlesikVeri} />
+                <ButunlesikPrint veri={butunlesikVeri} katilimci={katilimci} />
               </div>
             )
           )}

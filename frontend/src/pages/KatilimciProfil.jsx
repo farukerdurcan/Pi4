@@ -131,7 +131,7 @@ export default function KatilimciProfil() {
 
   return (
     <Layout>
-      <div className="h-13 bg-white border-b border-gray-200 flex items-center px-6 gap-2 flex-shrink-0">
+      <div className="h-13 bg-white border-b border-slate-200 flex items-center px-6 gap-2 flex-shrink-0">
         <button onClick={() => navigate('/katilimcilar')} className="text-xs text-gray-400 hover:text-gray-600">Katılımcılar</button>
         <span className="text-gray-300">/</span>
         <span className="text-xs font-medium text-gray-700">{k.ad} {k.soyad}</span>

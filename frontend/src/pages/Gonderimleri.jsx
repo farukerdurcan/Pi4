@@ -80,7 +80,7 @@ export default function Gonderimleri() {
 
   return (
     <Layout>
-      <div className="h-13 bg-white border-b border-gray-200 flex items-center justify-between px-6 flex-shrink-0">
+      <div className="h-13 bg-white border-b border-slate-200 flex items-center justify-between px-6 flex-shrink-0">
         <h1 className="text-sm font-medium text-gray-900">Gönderimler</h1>
         <div className="text-xs text-gray-500">{filtrelenmis.length} gönderi</div>
       </div>
@@ -88,7 +88,7 @@ export default function Gonderimleri() {
       <div className="flex-1 overflow-auto bg-gray-50">
 
         {/* Filtre çubuğu */}
-        <div className="bg-white border-b border-gray-200 px-6 py-3 flex items-center gap-3">
+        <div className="bg-white border-b border-slate-200 px-6 py-3 flex items-center gap-3">
           <input
             type="text"
             placeholder="Kişi ara..."

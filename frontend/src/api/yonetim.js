@@ -12,13 +12,19 @@ export const firmaGuncelle = (id, veri) => apiFetch(`/api/yonetim/firmalar/${id}
   body: JSON.stringify(veri)
 })
 
-export const firmaKullanicilari = (firmaId) =>
-  apiFetch(`/api/yonetim/firmalar/${firmaId}/kullanicilar`)
+export const firmaKullanicilari = (firmaId, aktif = true) =>
+  apiFetch(`/api/yonetim/firmalar/${firmaId}/kullanicilar?aktif=${aktif}`)
 
 export const ikKullaniciEkle = (firmaId, veri) =>
   apiFetch(`/api/yonetim/firmalar/${firmaId}/kullanicilar`, {
     method: 'POST',
     body: JSON.stringify(veri)
+  })
+
+export const kullaniciAktifGuncelle = (firmaId, kullaniciId, aktif) =>
+  apiFetch(`/api/yonetim/firmalar/${firmaId}/kullanicilar/${kullaniciId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ aktif })
   })
 
 export const ikKullaniciSil = (firmaId, kullaniciId) =>

@@ -207,7 +207,7 @@ export default function Raporlar() {
 
   return (
     <Layout>
-      <div className="no-print h-13 bg-white border-b border-gray-200 flex items-center px-6 flex-shrink-0">
+      <div className="no-print h-13 bg-white border-b border-slate-200 flex items-center px-6 flex-shrink-0">
         <h1 className="text-sm font-medium text-gray-900">Karşılaştırmalı Rapor</h1>
       </div>
 

@@ -15,11 +15,11 @@ body {
   .no-print { display: none !important; }
   .print-only { display: block !important; }
 
-  /* Tüm scroll kısıtlamalarını kaldır — içerik tam yükseklikte bassın */
   html, body {
     height: auto !important;
     overflow: visible !important;
     background: white !important;
+    margin: 0 !important;
   }
   * {
     -webkit-print-color-adjust: exact;
@@ -28,7 +28,11 @@ body {
   }
   *::-webkit-scrollbar { display: none !important; }
 
-  /* Layout kapsayıcıları serbest bırak */
+  @page {
+    margin: 14mm 16mm;
+    size: A4;
+  }
+
   .flex.h-screen,
   main,
   .overflow-hidden,
@@ -37,14 +41,13 @@ body {
     overflow: visible !important;
   }
 
-  /* Print alanı tam genişlikte */
   .print-area {
     width: 100% !important;
-    padding: 16px !important;
+    padding: 0 !important;
     font-size: 11px !important;
   }
 
-  /* Bireysel rapor — ekran spacing'ini sıkıştır */
+  /* Bireysel rapor — spacing sıkıştır */
   .print-area .space-y-4 > * + * { margin-top: 8px !important; }
   .print-area .space-y-6 > * + * { margin-top: 10px !important; }
   .print-area .p-4, .print-area .p-5, .print-area .p-6 { padding: 10px !important; }

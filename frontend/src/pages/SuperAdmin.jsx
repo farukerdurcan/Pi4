@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   firmaListesi, firmaOlustur, firmaGuncelle,
-  firmaKullanicilari, ikKullaniciEkle, ikKullaniciSil, sifreSifirla
+  firmaKullanicilari, ikKullaniciEkle, ikKullaniciSil,
+  kullaniciAktifGuncelle, sifreSifirla
 } from '../api/yonetim'
 
 function Modal({ baslik, onKapat, children }) {
@@ -182,18 +183,41 @@ function FirmaDetay({ firma, onGuncellendi }) {
   const [yukleniyor, setYukleniyor] = useState(true)
   const [ikEkleAcik, setIkEkleAcik] = useState(false)
   const [sifreSifirlaHedef, setSifreSifirlaHedef] = useState(null)
+  const [pasifGoster, setPasifGoster] = useState(false)
+  const [pasifOnay, setPasifOnay] = useState(null)
   const [silOnay, setSilOnay] = useState(null)
 
-  const yukle = () => {
+  const yukle = (gosterPasif = pasifGoster) => {
     setYukleniyor(true)
-    firmaKullanicilari(firma.id)
+    firmaKullanicilari(firma.id, !gosterPasif)
       .then(setKullanicilar)
       .finally(() => setYukleniyor(false))
   }
 
   useEffect(() => { yukle() }, [firma.id])
 
-  const handleSil = async (k) => {
+  const handlePasifGosterToggle = () => {
+    const yeniDeger = !pasifGoster
+    setPasifGoster(yeniDeger)
+    yukle(yeniDeger)
+  }
+
+  const handlePasifAl = async (k) => {
+    try {
+      await kullaniciAktifGuncelle(firma.id, k.id, false)
+      setPasifOnay(null)
+      yukle()
+    } catch {}
+  }
+
+  const handleAktifEt = async (k) => {
+    try {
+      await kullaniciAktifGuncelle(firma.id, k.id, true)
+      yukle()
+    } catch {}
+  }
+
+  const handleKaliciSil = async (k) => {
     try {
       await ikKullaniciSil(firma.id, k.id)
       setSilOnay(null)
@@ -201,7 +225,7 @@ function FirmaDetay({ firma, onGuncellendi }) {
     } catch {}
   }
 
-  const handleToggleAktif = async () => {
+  const handleToggleFirmaAktif = async () => {
     try {
       await firmaGuncelle(firma.id, { aktif: !firma.aktif })
       onGuncellendi()
@@ -216,7 +240,7 @@ function FirmaDetay({ firma, onGuncellendi }) {
           <div className="text-xs text-gray-400 font-mono mt-0.5">{firma.slug}</div>
         </div>
         <button
-          onClick={handleToggleAktif}
+          onClick={handleToggleFirmaAktif}
           className={`text-xs px-3 py-1 rounded-full font-medium transition-colors ${
             firma.aktif
               ? 'bg-green-100 text-green-700 hover:bg-red-100 hover:text-red-700'
@@ -229,7 +253,19 @@ function FirmaDetay({ firma, onGuncellendi }) {
 
       <div className="px-5 py-4">
         <div className="flex items-center justify-between mb-3">
-          <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">IK Yöneticileri</span>
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">IK Yöneticileri</span>
+            <button
+              onClick={handlePasifGosterToggle}
+              className={`text-xs px-2 py-0.5 rounded border transition-colors ${
+                pasifGoster
+                  ? 'bg-orange-50 border-orange-200 text-orange-600'
+                  : 'border-gray-200 text-gray-400 hover:text-gray-600'
+              }`}
+            >
+              {pasifGoster ? 'Pasifleri gizle' : 'Pasifleri göster'}
+            </button>
+          </div>
           <button
             onClick={() => setIkEkleAcik(true)}
             className="text-xs bg-tatko text-white px-3 py-1.5 rounded-lg hover:bg-tatko-koyu"
@@ -241,34 +277,55 @@ function FirmaDetay({ firma, onGuncellendi }) {
         {yukleniyor ? (
           <p className="text-xs text-gray-400 py-4 text-center">Yükleniyor...</p>
         ) : kullanicilar.length === 0 ? (
-          <p className="text-xs text-gray-400 py-4 text-center">Henüz IK yöneticisi eklenmemiş.</p>
+          <p className="text-xs text-gray-400 py-4 text-center">
+            {pasifGoster ? 'Pasif kullanıcı bulunmuyor.' : 'Henüz IK yöneticisi eklenmemiş.'}
+          </p>
         ) : (
           <div className="space-y-2">
             {kullanicilar.map(k => (
-              <div key={k.id} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg border ${k.aktif ? 'border-gray-100 bg-gray-50' : 'border-red-100 bg-red-50 opacity-60'}`}>
-                <div className="w-8 h-8 rounded-full bg-tatko/10 flex items-center justify-center text-tatko text-xs font-semibold flex-shrink-0">
+              <div key={k.id} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg border ${k.aktif ? 'border-gray-100 bg-gray-50' : 'border-orange-100 bg-orange-50'}`}>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0 ${k.aktif ? 'bg-tatko/10 text-tatko' : 'bg-orange-100 text-orange-400'}`}>
                   {k.ad[0]}{k.soyad[0]}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium text-gray-900 truncate">{k.ad} {k.soyad}</div>
-                  <div className="text-xs text-gray-500 truncate">{k.email}</div>
+                  <div className={`text-sm font-medium truncate ${k.aktif ? 'text-gray-900' : 'text-gray-400'}`}>{k.ad} {k.soyad}</div>
+                  <div className="text-xs text-gray-400 truncate">{k.email}</div>
                 </div>
                 <div className="flex gap-1 flex-shrink-0">
-                  <button
-                    onClick={() => setSifreSifirlaHedef(k)}
-                    className="text-xs text-gray-400 hover:text-orange-600 px-2 py-1 rounded hover:bg-orange-50"
-                    title="Şifre sıfırla"
-                  >
-                    🔑
-                  </button>
-                  {k.aktif && (
-                    <button
-                      onClick={() => setSilOnay(k)}
-                      className="text-xs text-gray-400 hover:text-red-600 px-2 py-1 rounded hover:bg-red-50"
-                      title="Pasife al"
-                    >
-                      ✕
-                    </button>
+                  {k.aktif ? (
+                    <>
+                      <button
+                        onClick={() => setSifreSifirlaHedef(k)}
+                        className="text-xs text-gray-400 hover:text-orange-600 px-2 py-1 rounded hover:bg-orange-50"
+                        title="Şifre sıfırla"
+                      >
+                        🔑
+                      </button>
+                      <button
+                        onClick={() => setPasifOnay(k)}
+                        className="text-xs text-gray-400 hover:text-red-600 px-2 py-1 rounded hover:bg-red-50"
+                        title="Pasife al"
+                      >
+                        ✕
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => handleAktifEt(k)}
+                        className="text-xs text-green-600 hover:text-green-700 px-2 py-1 rounded hover:bg-green-50 font-medium"
+                        title="Aktif et"
+                      >
+                        Aktif Et
+                      </button>
+                      <button
+                        onClick={() => setSilOnay(k)}
+                        className="text-xs text-red-400 hover:text-red-700 px-2 py-1 rounded hover:bg-red-50"
+                        title="Kalıcı sil"
+                      >
+                        Sil
+                      </button>
+                    </>
                   )}
                 </div>
               </div>
@@ -294,14 +351,27 @@ function FirmaDetay({ firma, onGuncellendi }) {
         />
       )}
 
-      {silOnay && (
-        <Modal baslik="Kullanıcıyı pasife al" onKapat={() => setSilOnay(null)}>
+      {pasifOnay && (
+        <Modal baslik="Kullanıcıyı pasife al" onKapat={() => setPasifOnay(null)}>
           <p className="text-sm text-gray-600 mb-4">
-            <strong>{silOnay.ad} {silOnay.soyad}</strong> kullanıcısı pasife alınacak ve sisteme giremeyecek.
+            <strong>{pasifOnay.ad} {pasifOnay.soyad}</strong> kullanıcısı pasife alınacak ve sisteme giremeyecek.
           </p>
           <div className="flex gap-2">
+            <button onClick={() => setPasifOnay(null)} className="flex-1 border border-gray-200 text-gray-600 text-sm py-2 rounded-lg">İptal</button>
+            <button onClick={() => handlePasifAl(pasifOnay)} className="flex-1 bg-red-600 text-white text-sm py-2 rounded-lg hover:bg-red-700">Pasife Al</button>
+          </div>
+        </Modal>
+      )}
+
+      {silOnay && (
+        <Modal baslik="Kullanıcıyı kalıcı olarak sil" onKapat={() => setSilOnay(null)}>
+          <p className="text-sm text-gray-600 mb-1">
+            <strong>{silOnay.ad} {silOnay.soyad}</strong> kullanıcısı sistemden kalıcı olarak silinecek.
+          </p>
+          <p className="text-xs text-red-600 mb-4">Bu işlem geri alınamaz.</p>
+          <div className="flex gap-2">
             <button onClick={() => setSilOnay(null)} className="flex-1 border border-gray-200 text-gray-600 text-sm py-2 rounded-lg">İptal</button>
-            <button onClick={() => handleSil(silOnay)} className="flex-1 bg-red-600 text-white text-sm py-2 rounded-lg hover:bg-red-700">Pasife Al</button>
+            <button onClick={() => handleKaliciSil(silOnay)} className="flex-1 bg-red-700 text-white text-sm py-2 rounded-lg hover:bg-red-800">Kalıcı Sil</button>
           </div>
         </Modal>
       )}

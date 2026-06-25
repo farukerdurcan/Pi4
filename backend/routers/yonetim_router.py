@@ -39,6 +39,10 @@ class SifreSifirla(BaseModel):
     yeni_sifre: str
 
 
+class KullaniciGuncelle(BaseModel):
+    aktif: bool
+
+
 class FirmaYaniti(BaseModel):
     id: int
     ad: str
@@ -140,6 +144,7 @@ def firma_guncelle(
 @router.get("/firmalar/{firma_id}/kullanicilar", response_model=List[IKKullaniciYaniti])
 def firma_kullanicilari(
     firma_id: int,
+    aktif: Optional[bool] = True,
     db: Session = Depends(get_db),
     _: User = Depends(super_admin_gerektir)
 ):
@@ -147,11 +152,13 @@ def firma_kullanicilari(
     if not firma:
         raise HTTPException(status_code=404, detail="Firma bulunamadı")
 
-    kullanicilar = db.query(User).filter(
+    sorgu = db.query(User).filter(
         User.firma_id == firma_id,
         User.rol == UserRole.ik_yoneticisi
-    ).order_by(User.ad).all()
-    return kullanicilar
+    )
+    if aktif is not None:
+        sorgu = sorgu.filter(User.aktif == aktif)
+    return sorgu.order_by(User.ad).all()
 
 
 @router.post("/firmalar/{firma_id}/kullanicilar", response_model=IKKullaniciYaniti, status_code=status.HTTP_201_CREATED)
@@ -202,6 +209,28 @@ def ik_kullanici_ekle(
     return kullanici
 
 
+@router.patch("/firmalar/{firma_id}/kullanicilar/{kullanici_id}", response_model=IKKullaniciYaniti)
+def kullanici_aktif_guncelle(
+    firma_id: int,
+    kullanici_id: int,
+    istek: KullaniciGuncelle,
+    db: Session = Depends(get_db),
+    _: User = Depends(super_admin_gerektir)
+):
+    kullanici = db.query(User).filter(
+        User.id == kullanici_id,
+        User.firma_id == firma_id,
+        User.rol == UserRole.ik_yoneticisi
+    ).first()
+    if not kullanici:
+        raise HTTPException(status_code=404, detail="Kullanıcı bulunamadı")
+
+    kullanici.aktif = istek.aktif
+    db.commit()
+    db.refresh(kullanici)
+    return kullanici
+
+
 @router.delete("/firmalar/{firma_id}/kullanicilar/{kullanici_id}", status_code=status.HTTP_204_NO_CONTENT)
 def ik_kullanici_sil(
     firma_id: int,
@@ -217,7 +246,7 @@ def ik_kullanici_sil(
     if not kullanici:
         raise HTTPException(status_code=404, detail="Kullanıcı bulunamadı")
 
-    kullanici.aktif = False
+    db.delete(kullanici)
     db.commit()
 
 
