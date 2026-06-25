@@ -12,6 +12,8 @@ import Ayarlar from './pages/Ayarlar'
 import KorumaRota from './components/KorumaRota'
 import SuperAdmin from './pages/SuperAdmin'
 import HesapKur from './pages/HesapKur'
+import SifreUnuttum from './pages/SifreUnuttum'
+import SifreSifirla from './pages/SifreSifirla'
 
 function App() {
   const basePath = import.meta.env.VITE_BASE_PATH || '/'
@@ -21,6 +23,8 @@ function App() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/hesap-kur" element={<HesapKur />} />
+        <Route path="/sifre-unuttum" element={<SifreUnuttum />} />
+        <Route path="/sifre-sifirla" element={<SifreSifirla />} />
         <Route path="/form/:token" element={<FormSayfasi />} />
 
         <Route path="/panel" element={<KorumaRota gerekliRol="ik_yoneticisi"><Panel /></KorumaRota>} />

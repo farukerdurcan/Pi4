@@ -57,6 +57,8 @@ class User(Base):
     aktif = Column(Boolean, default=True)
     davet_token_hash = Column(String, nullable=True)
     davet_token_son_kullanim = Column(DateTime(timezone=True), nullable=True)
+    sifirla_token_hash = Column(String, nullable=True)
+    sifirla_token_son_kullanim = Column(DateTime(timezone=True), nullable=True)
     firma_id = Column(Integer, ForeignKey("firmalar.id"), nullable=True)
     olusturulma_tarihi = Column(DateTime(timezone=True), server_default=func.now())
 

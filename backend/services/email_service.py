@@ -154,6 +154,28 @@ def ik_davet_emaili_olustur(
     return email_gonder(alici_email, alici_ad, konu, _html_sarmal(konu, icerik))
 
 
+def sifre_sifirla_emaili_olustur(
+    alici_email: str,
+    alici_ad: str,
+    sifre_sifirla_linki: str,
+) -> bool:
+    """Şifre sıfırlama linki içeren e-posta gönderir (45 dk geçerli)."""
+    konu = "PI4 Değerlendirme — Şifre sıfırlama"
+    icerik = f"""
+<p style="margin:0 0 16px;font-size:15px;color:#374151;">Sayın <strong>{alici_ad}</strong>,</p>
+<p style="margin:0 0 24px;font-size:14px;color:#6b7280;line-height:1.6;">
+  Şifre sıfırlama talebinde bulundunuz. Aşağıdaki butona tıklayarak yeni şifrenizi belirleyebilirsiniz.
+  Link <strong>45 dakika</strong> geçerlidir.
+</p>
+<a href="{sifre_sifirla_linki}" style="display:inline-block;background:#1d4ed8;color:#fff;text-decoration:none;font-size:14px;font-weight:600;padding:12px 28px;border-radius:8px;">Şifremi sıfırla →</a>
+<p style="margin:20px 0 0;font-size:12px;color:#9ca3af;">
+  Bu talebi siz yapmadıysanız bu e-postayı görmezden gelebilirsiniz.<br>
+  Bağlantı çalışmıyorsa: <span style="color:#6b7280;">{sifre_sifirla_linki}</span>
+</p>
+<p style="margin:24px 0 0;font-size:13px;color:#6b7280;">Saygılarımızla,<br><strong>PI4 Değerlendirme Platformu</strong></p>"""
+    return email_gonder(alici_email, alici_ad, konu, _html_sarmal(konu, icerik))
+
+
 def hatirlatma_emaili_olustur(
     alici_email: str,
     alici_ad: str,

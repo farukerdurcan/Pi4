@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { girisYap } from '../api'
 
 export default function Login() {
@@ -99,6 +99,11 @@ export default function Login() {
               {yukleniyor ? 'Giriş yapılıyor...' : 'Giriş yap'}
             </button>
           </form>
+          <div className="mt-4 text-center">
+            <Link to="/sifre-unuttum" className="text-xs text-gray-400 hover:text-tatko transition-colors">
+              Şifremi unuttum
+            </Link>
+          </div>
         </div>
 
         <p className="text-center text-xs text-gray-400 mt-6">

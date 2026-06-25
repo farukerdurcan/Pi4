@@ -84,4 +84,16 @@ export const hesapKur = (token, yeniSifre) =>
     body: JSON.stringify({ token, yeni_sifre: yeniSifre })
   })
 
+export const sifreSifirlaIste = (email) =>
+  apiFetch('/api/auth/sifre-sifirla-iste', {
+    method: 'POST',
+    body: JSON.stringify({ email })
+  })
+
+export const sifreSifrarlaTamamla = (token, yeniSifre) =>
+  apiFetch('/api/auth/sifre-sifirla-tamamla', {
+    method: 'POST',
+    body: JSON.stringify({ token, yeni_sifre: yeniSifre })
+  })
+
 export default api

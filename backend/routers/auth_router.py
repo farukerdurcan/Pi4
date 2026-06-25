@@ -98,6 +98,70 @@ async def sifre_degistir(
     return {"mesaj": "Şifre başarıyla güncellendi"}
 
 
+@router.post("/sifre-sifirla-iste")
+def sifre_sifirla_iste(veri: SifreSifirlaIste, db: Session = Depends(get_db)):
+    """E-posta adresine şifre sıfırlama linki gönderir."""
+    import secrets, hashlib, os
+    from datetime import datetime, timedelta
+    from services.email_service import sifre_sifirla_emaili_olustur
+
+    kullanici = db.query(User).filter(User.email == veri.email).first()
+    # Güvenlik: hesap yoksa da aynı mesajı döndür
+    if kullanici and kullanici.aktif:
+        token = secrets.token_urlsafe(32)
+        token_hash = hashlib.sha256(token.encode()).hexdigest()
+        kullanici.sifirla_token_hash = token_hash
+        kullanici.sifirla_token_son_kullanim = datetime.utcnow() + timedelta(minutes=45)
+        db.commit()
+
+        frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
+        link = f"{frontend_url}/sifre-sifirla?token={token}"
+        try:
+            sifre_sifirla_emaili_olustur(
+                alici_email=kullanici.email,
+                alici_ad=kullanici.tam_ad,
+                sifre_sifirla_linki=link
+            )
+        except Exception:
+            pass
+
+    return {"mesaj": "E-posta adresiniz kayıtlıysa şifre sıfırlama linki gönderildi."}
+
+
+@router.post("/sifre-sifirla-tamamla")
+def sifre_sifirla_tamamla(veri: SifreSifralaTokenle, db: Session = Depends(get_db)):
+    """Token ile yeni şifre belirler."""
+    import hashlib
+    from datetime import datetime
+
+    if len(veri.yeni_sifre) < 6:
+        raise HTTPException(status_code=400, detail="Şifre en az 6 karakter olmalı")
+
+    token_hash = hashlib.sha256(veri.token.encode()).hexdigest()
+    kullanici = db.query(User).filter(
+        User.sifirla_token_hash == token_hash,
+        User.sifirla_token_son_kullanim > datetime.utcnow()
+    ).first()
+
+    if not kullanici:
+        raise HTTPException(status_code=400, detail="Geçersiz veya süresi dolmuş link")
+
+    kullanici.hashed_password = sifreyi_hashle(veri.yeni_sifre)
+    kullanici.sifirla_token_hash = None
+    kullanici.sifirla_token_son_kullanim = None
+    db.commit()
+    return {"mesaj": "Şifreniz güncellendi. Giriş yapabilirsiniz."}
+
+
+class SifreSifirlaIste(BaseModel):
+    email: str
+
+
+class SifreSifralaTokenle(BaseModel):
+    token: str
+    yeni_sifre: str
+
+
 class HesapKur(BaseModel):
     token: str
     yeni_sifre: str

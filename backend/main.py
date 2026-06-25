@@ -62,8 +62,10 @@ def _kolonlari_guncelle(db):
         ("notlar",        "rapora_dahil",      "BOOLEAN DEFAULT 0"),
         ("notlar",        "yoneticiden_gizle", "BOOLEAN DEFAULT 0"),
         ("users",         "firma_id",              "INTEGER"),
-        ("users",         "davet_token_hash",      "VARCHAR"),
+        ("users",         "davet_token_hash",        "VARCHAR"),
         ("users",         "davet_token_son_kullanim", "TIMESTAMP WITH TIME ZONE"),
+        ("users",         "sifirla_token_hash",      "VARCHAR"),
+        ("users",         "sifirla_token_son_kullanim", "TIMESTAMP WITH TIME ZONE"),
         ("katilimcilar",  "firma_id",          "INTEGER"),
     ]
     for tablo, kolon, tip in eklemeler:
