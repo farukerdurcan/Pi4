@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
@@ -10,6 +10,7 @@ from auth import (
     aktif_kullanici,
     sifreyi_hashle
 )
+from limiter import limiter
 
 router = APIRouter(prefix="/api/auth", tags=["Kimlik Doğrulama"])
 
@@ -33,7 +34,9 @@ class KullaniciBilgisi(BaseModel):
         from_attributes = True
 
 @router.post("/login", response_model=TokenYaniti)
+@limiter.limit("5/minute")
 async def giris_yap(
+    request: Request,
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db)
 ):
@@ -52,6 +55,11 @@ async def giris_yap(
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Hesabınız devre dışı bırakılmış"
+        )
+    if not kullanici.hashed_password:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Hesabınız henüz aktifleştirilmemiş. E-postanızdaki davet linkine tıklayarak şifrenizi belirleyin."
         )
 
     token = token_olustur(data={"sub": kullanici.email})
@@ -88,3 +96,33 @@ async def sifre_degistir(
     kullanici.hashed_password = sifreyi_hashle(veri.yeni_sifre)
     db.commit()
     return {"mesaj": "Şifre başarıyla güncellendi"}
+
+
+class HesapKur(BaseModel):
+    token: str
+    yeni_sifre: str
+
+
+@router.post("/hesap-kur")
+def hesap_kur(veri: HesapKur, db: Session = Depends(get_db)):
+    """Davet tokenı ile ilk şifre belirleme."""
+    import hashlib
+    from datetime import datetime
+
+    if len(veri.yeni_sifre) < 6:
+        raise HTTPException(status_code=400, detail="Şifre en az 6 karakter olmalı")
+
+    token_hash = hashlib.sha256(veri.token.encode()).hexdigest()
+    kullanici = db.query(User).filter(
+        User.davet_token_hash == token_hash,
+        User.davet_token_son_kullanim > datetime.utcnow()
+    ).first()
+
+    if not kullanici:
+        raise HTTPException(status_code=400, detail="Geçersiz veya süresi dolmuş davet linki")
+
+    kullanici.hashed_password = sifreyi_hashle(veri.yeni_sifre)
+    kullanici.davet_token_hash = None
+    kullanici.davet_token_son_kullanim = None
+    db.commit()
+    return {"mesaj": "Şifreniz başarıyla belirlendi. Giriş yapabilirsiniz."}

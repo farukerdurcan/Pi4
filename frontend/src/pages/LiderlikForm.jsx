@@ -10,7 +10,7 @@ const ADIMLAR = [
   { id: 'ozet', label: 'Özet' },
 ]
 
-export default function LiderlikForm({ token, bilgi, onTamamlandi }) {
+export default function LiderlikForm({ token, bilgi, firmaAdi, onTamamlandi }) {
   const mevcutYanitlar = bilgi.mevcut_yanitlar || {}
   const [bolum1Yanitlar, setBolum1Yanitlar] = useState(mevcutYanitlar.bolum1 || {})
   const [bolum2Yanitlar, setBolum2Yanitlar] = useState(mevcutYanitlar.bolum2 || {})
@@ -66,6 +66,7 @@ export default function LiderlikForm({ token, bilgi, onTamamlandi }) {
   return (
     <FormLayout
       katilimciAd={`${bilgi.katilimci_ad} ${bilgi.katilimci_soyad}`}
+      firmaAdi={firmaAdi}
       envanter="Liderlik Stili Testi"
       adimlar={adimlar}
       ilerlemeYuzdesi={ilerleme}

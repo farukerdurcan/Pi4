@@ -15,7 +15,7 @@ const OLCEK = [
 const SAYFA_BOYUTU = 10
 const TOPLAM_SAYFA = Math.ceil(ETKILESIM_SORULAR.length / SAYFA_BOYUTU)
 
-export default function EtkilesimForm({ token, bilgi, onTamamlandi }) {
+export default function EtkilesimForm({ token, bilgi, firmaAdi, onTamamlandi }) {
   const mevcutYanitlar = bilgi.mevcut_yanitlar || {}
   const [yanitlar, setYanitlar] = useState(mevcutYanitlar.yanitlar || {})
   const [sayfa, setSayfa] = useState(-1)
@@ -60,6 +60,7 @@ export default function EtkilesimForm({ token, bilgi, onTamamlandi }) {
   return (
     <FormLayout
       katilimciAd={`${bilgi.katilimci_ad} ${bilgi.katilimci_soyad}`}
+      firmaAdi={firmaAdi}
       envanter="Kişilerarası Etkileşim Testi"
       adimlar={adimlar}
       ilerlemeYuzdesi={ilerleme}

@@ -84,7 +84,7 @@ function YeniFirmaModal({ onKapat, onEklendi }) {
 }
 
 function IKEkleModal({ firma, onKapat, onEklendi }) {
-  const [form, setForm] = useState({ ad: '', soyad: '', email: '', sifre: '' })
+  const [form, setForm] = useState({ ad: '', soyad: '', email: '' })
   const [yukleniyor, setYukleniyor] = useState(false)
   const [hata, setHata] = useState('')
 
@@ -122,18 +122,14 @@ function IKEkleModal({ firma, onKapat, onEklendi }) {
           <input type="email" required value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-tatko" />
         </div>
-        <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">Şifre</label>
-          <input type="text" required minLength={6} value={form.sifre} onChange={e => setForm(f => ({ ...f, sifre: e.target.value }))}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-tatko"
-            placeholder="En az 6 karakter" />
-        </div>
-        <p className="text-xs text-gray-400 bg-blue-50 rounded-lg px-3 py-2">Giriş bilgileri otomatik olarak e-posta ile gönderilecek.</p>
+        <p className="text-xs text-gray-400 bg-blue-50 rounded-lg px-3 py-2">
+          Kullanıcıya e-posta ile şifre belirleme linki gönderilecek (72 saat geçerli).
+        </p>
         {hata && <p className="text-xs text-red-600 bg-red-50 rounded-lg px-3 py-2">{hata}</p>}
         <div className="flex gap-2 pt-1">
           <button type="button" onClick={onKapat} className="flex-1 border border-gray-200 text-gray-600 text-sm py-2 rounded-lg hover:bg-gray-50">İptal</button>
           <button type="submit" disabled={yukleniyor} className="flex-1 bg-tatko text-white text-sm py-2 rounded-lg hover:bg-tatko-koyu disabled:opacity-50">
-            {yukleniyor ? 'Ekleniyor...' : 'Ekle ve E-posta Gönder'}
+            {yukleniyor ? 'Ekleniyor...' : 'Ekle ve Davet Gönder'}
           </button>
         </div>
       </form>

@@ -11,6 +11,7 @@ import Gonderimleri from './pages/Gonderimleri'
 import Ayarlar from './pages/Ayarlar'
 import KorumaRota from './components/KorumaRota'
 import SuperAdmin from './pages/SuperAdmin'
+import HesapKur from './pages/HesapKur'
 
 function App() {
   const basePath = import.meta.env.VITE_BASE_PATH || '/'
@@ -19,6 +20,7 @@ function App() {
     <BrowserRouter basename={basePath}>
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route path="/hesap-kur" element={<HesapKur />} />
         <Route path="/form/:token" element={<FormSayfasi />} />
 
         <Route path="/panel" element={<KorumaRota gerekliRol="ik_yoneticisi"><Panel /></KorumaRota>} />

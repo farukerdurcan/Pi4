@@ -72,4 +72,16 @@ export const apiFetch = async (path, options = {}) => {
   return res.json()
 }
 
+export const sifreDegistir = (mevcutSifre, yeniSifre) =>
+  apiFetch('/api/auth/sifre-degistir', {
+    method: 'POST',
+    body: JSON.stringify({ mevcut_sifre: mevcutSifre, yeni_sifre: yeniSifre })
+  })
+
+export const hesapKur = (token, yeniSifre) =>
+  apiFetch('/api/auth/hesap-kur', {
+    method: 'POST',
+    body: JSON.stringify({ token, yeni_sifre: yeniSifre })
+  })
+
 export default api

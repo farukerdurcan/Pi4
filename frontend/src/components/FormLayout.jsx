@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 
-export default function FormLayout({ katilimciAd, envanter, adimlar, ilerlemeYuzdesi, children, onGeri, onIleri, ileriLabel = 'Devam et →', geriGoster = true, yukleniyor = false, scrollKey, hata }) {
+export default function FormLayout({ katilimciAd, firmaAdi, envanter, adimlar, ilerlemeYuzdesi, children, onGeri, onIleri, ileriLabel = 'Devam et →', geriGoster = true, yukleniyor = false, scrollKey, hata }) {
   const icerikRef = useRef(null)
 
   useEffect(() => {
@@ -16,7 +16,7 @@ export default function FormLayout({ katilimciAd, envanter, adimlar, ilerlemeYuz
             <div className="w-7 h-7 bg-white rounded-lg flex items-center justify-center">
               <span className="text-tatko font-medium text-sm">T</span>
             </div>
-            <span className="text-white text-sm font-medium">TATKO PI Envanter</span>
+            <span className="text-white text-sm font-medium">{firmaAdi || 'PI4 Değerlendirme'}</span>
           </div>
           <span className="text-white/70 text-xs">{katilimciAd}</span>
         </div>

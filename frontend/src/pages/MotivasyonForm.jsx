@@ -14,7 +14,7 @@ const SECENEKLER = [
 const SAYFA_BOYUTU = 10
 const TOPLAM_SAYFA = Math.ceil(MOTIVASYON_SORULAR.length / SAYFA_BOYUTU)
 
-export default function MotivasyonForm({ token, bilgi, onTamamlandi }) {
+export default function MotivasyonForm({ token, bilgi, firmaAdi, onTamamlandi }) {
   const mevcutYanitlar = bilgi.mevcut_yanitlar || {}
   const [yanitlar, setYanitlar] = useState(mevcutYanitlar.yanitlar || {})
   // -1 = giriş ekranı, 0..3 = soru sayfaları, 4 = özet
@@ -70,6 +70,7 @@ export default function MotivasyonForm({ token, bilgi, onTamamlandi }) {
   return (
     <FormLayout
       katilimciAd={`${bilgi.katilimci_ad} ${bilgi.katilimci_soyad}`}
+      firmaAdi={firmaAdi}
       envanter="Motivasyon İhtiyacı Testi"
       adimlar={adimlar}
       ilerlemeYuzdesi={ilerleme}

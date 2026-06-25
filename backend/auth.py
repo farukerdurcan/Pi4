@@ -9,8 +9,13 @@ from sqlalchemy.orm import Session
 from database import get_db
 from models import User, UserRole
 
-# Token ayarları — canlıda SECRET_KEY env değişkeni set edilmeli
-SECRET_KEY = os.getenv("SECRET_KEY", "tatko-pi-gizli-anahtar-2026-dev")
+# SECRET_KEY tanımlı değilse uygulama başlatılmaz (fail-fast)
+SECRET_KEY = os.getenv("SECRET_KEY")
+if not SECRET_KEY:
+    raise RuntimeError(
+        "SECRET_KEY ortam değişkeni tanımlı değil. "
+        "'.env' dosyasına SECRET_KEY ekleyin (openssl rand -hex 32)."
+    )
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("TOKEN_EXPIRE_MINUTES", "480"))
 

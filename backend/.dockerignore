@@ -1,0 +1,7 @@
+*.db
+emails/
+__pycache__/
+*.pyc
+*.pyo
+.env
+.env.*

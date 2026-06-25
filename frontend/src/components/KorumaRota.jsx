@@ -12,7 +12,7 @@ export default function KorumaRota({ children, gerekliRol }) {
     if (kullanici.rol === 'super_admin') return <Navigate to="/yonetim" replace />
     if (kullanici.rol === 'ik_yoneticisi') return <Navigate to="/panel" replace />
     if (kullanici.rol === 'yonetici') return <Navigate to="/raporlar" replace />
-    return <Navigate to="/form" replace />
+    return <Navigate to="/login" replace />
   }
 
   return children

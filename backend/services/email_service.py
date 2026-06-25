@@ -11,8 +11,9 @@ EMAIL_FROM_NAME = os.getenv("EMAIL_FROM_NAME", "PI4 Değerlendirme")
 EMAIL_KLASORU = Path(__file__).parent.parent / "emails"
 
 
-def _resend_gonder(alici_email: str, alici_ad: str, konu: str, html: str) -> bool:
+def _resend_gonder(alici_email: str, alici_ad: str, konu: str, html: str, from_name: str = "") -> bool:
     """Resend API üzerinden e-posta gönderir."""
+    gonderici_ad = from_name or EMAIL_FROM_NAME
     try:
         with httpx.Client(timeout=10) as client:
             r = client.post(
@@ -22,7 +23,7 @@ def _resend_gonder(alici_email: str, alici_ad: str, konu: str, html: str) -> boo
                     "Content-Type": "application/json",
                 },
                 json={
-                    "from": f"{EMAIL_FROM_NAME} <{EMAIL_FROM}>",
+                    "from": f"{gonderici_ad} <{EMAIL_FROM}>",
                     "to": [f"{alici_ad} <{alici_email}>"],
                     "subject": konu,
                     "html": html,
@@ -54,9 +55,10 @@ def _dosyaya_kaydet(alici_email: str, alici_ad: str, konu: str, html: str) -> bo
         return False
 
 
-def email_gonder(alici_email: str, alici_ad: str, konu: str, html: str) -> bool:
+def email_gonder(alici_email: str, alici_ad: str, konu: str, html: str, from_name: str = "") -> bool:
+    gonderici_ad = from_name or EMAIL_FROM_NAME
     if RESEND_API_KEY:
-        return _resend_gonder(alici_email, alici_ad, konu, html)
+        return _resend_gonder(alici_email, alici_ad, konu, html, gonderici_ad)
     return _dosyaya_kaydet(alici_email, alici_ad, konu, html)
 
 
@@ -90,8 +92,12 @@ def davet_emaili_olustur(
     alici_ad: str,
     envanter_adi: str,
     form_linki: str,
+    firma_adi: str = "",
     dil: str = "tr",
 ) -> bool:
+    from_name = f"{firma_adi} — PI4 Değerlendirme" if firma_adi else EMAIL_FROM_NAME
+    ik_imza = firma_adi if firma_adi else "İnsan Kaynakları"
+
     if dil == "tr":
         konu = f"PI4 Değerlendirme — {envanter_adi} formu"
         icerik = f"""
@@ -108,7 +114,7 @@ def davet_emaili_olustur(
   Bağlantı çalışmıyorsa şu adresi tarayıcınıza kopyalayın:<br>
   <span style="color:#6b7280;">{form_linki}</span>
 </p>
-<p style="margin:24px 0 0;font-size:13px;color:#6b7280;">Saygılarımızla,<br><strong>İnsan Kaynakları</strong></p>"""
+<p style="margin:24px 0 0;font-size:13px;color:#6b7280;">Saygılarımızla,<br><strong>{ik_imza} İnsan Kaynakları</strong></p>"""
     else:
         konu = f"PI4 Assessment — {envanter_adi} form"
         icerik = f"""
@@ -120,34 +126,30 @@ def davet_emaili_olustur(
 <p style="margin:20px 0 0;font-size:12px;color:#9ca3af;">
   If the button doesn't work, copy this URL: <span style="color:#6b7280;">{form_linki}</span>
 </p>
-<p style="margin:24px 0 0;font-size:13px;color:#6b7280;">Best regards,<br><strong>Human Resources</strong></p>"""
+<p style="margin:24px 0 0;font-size:13px;color:#6b7280;">Best regards,<br><strong>{ik_imza} Human Resources</strong></p>"""
 
-    return email_gonder(alici_email, alici_ad, konu, _html_sarmal(konu, icerik))
+    return email_gonder(alici_email, alici_ad, konu, _html_sarmal(konu, icerik), from_name)
 
 
 def ik_davet_emaili_olustur(
     alici_email: str,
     alici_ad: str,
     firma_adi: str,
-    sifre: str,
-    giris_linki: str,
+    hesap_kur_linki: str,
 ) -> bool:
-    """Super admin tarafından oluşturulan IK yöneticisine giriş bilgilerini gönderir."""
-    konu = "PI4 Değerlendirme — Hesabınız oluşturuldu"
+    """Yeni oluşturulan kullanıcıya şifre belirleme linki gönderir."""
+    konu = "PI4 Değerlendirme — Hesabınıza davet edildiniz"
     icerik = f"""
 <p style="margin:0 0 16px;font-size:15px;color:#374151;">Sayın <strong>{alici_ad}</strong>,</p>
-<p style="margin:0 0 16px;font-size:14px;color:#6b7280;line-height:1.6;">
-  <strong>{firma_adi}</strong> için PI4 Değerlendirme Platformu hesabınız oluşturulmuştur.
-  Aşağıdaki bilgilerle sisteme giriş yapabilirsiniz.
+<p style="margin:0 0 24px;font-size:14px;color:#6b7280;line-height:1.6;">
+  <strong>{firma_adi}</strong> adına PI4 Değerlendirme Platformuna davet edildiniz.
+  Hesabınızı aktifleştirmek ve şifrenizi belirlemek için aşağıdaki butona tıklayın.
 </p>
-<table cellpadding="0" cellspacing="0" style="margin:0 0 24px;background:#f8fafc;border-radius:8px;padding:16px;width:100%;">
-  <tr><td style="font-size:13px;color:#6b7280;padding:6px 0;width:100px;">E-posta</td>
-      <td style="font-size:13px;color:#111827;font-weight:600;padding:6px 0;">{alici_email}</td></tr>
-  <tr><td style="font-size:13px;color:#6b7280;padding:6px 0;">Şifre</td>
-      <td style="font-size:13px;color:#111827;font-weight:600;padding:6px 0;">{sifre}</td></tr>
-</table>
-<a href="{giris_linki}" style="display:inline-block;background:#1d4ed8;color:#fff;text-decoration:none;font-size:14px;font-weight:600;padding:12px 28px;border-radius:8px;">Sisteme giriş yap →</a>
-<p style="margin:20px 0 0;font-size:12px;color:#9ca3af;">Güvenliğiniz için ilk girişten sonra şifrenizi değiştirmenizi öneririz.</p>
+<a href="{hesap_kur_linki}" style="display:inline-block;background:#1d4ed8;color:#fff;text-decoration:none;font-size:14px;font-weight:600;padding:12px 28px;border-radius:8px;">Hesabımı aktifleştir →</a>
+<p style="margin:20px 0 0;font-size:12px;color:#9ca3af;">
+  Bu link 72 saat geçerlidir. Bağlantı çalışmıyorsa şu adresi tarayıcınıza kopyalayın:<br>
+  <span style="color:#6b7280;">{hesap_kur_linki}</span>
+</p>
 <p style="margin:24px 0 0;font-size:13px;color:#6b7280;">Saygılarımızla,<br><strong>PI4 Değerlendirme Platformu</strong></p>"""
     return email_gonder(alici_email, alici_ad, konu, _html_sarmal(konu, icerik))
 
@@ -157,8 +159,12 @@ def hatirlatma_emaili_olustur(
     alici_ad: str,
     envanter_adi: str,
     form_linki: str,
+    firma_adi: str = "",
     dil: str = "tr",
 ) -> bool:
+    from_name = f"{firma_adi} — PI4 Değerlendirme" if firma_adi else EMAIL_FROM_NAME
+    ik_imza = firma_adi if firma_adi else "İnsan Kaynakları"
+
     if dil == "tr":
         konu = f"Hatırlatma: {envanter_adi} formu henüz tamamlanmadı"
         icerik = f"""
@@ -169,7 +175,7 @@ def hatirlatma_emaili_olustur(
 </p>
 <a href="{form_linki}" style="display:inline-block;background:#1d4ed8;color:#fff;text-decoration:none;font-size:14px;font-weight:600;padding:12px 28px;border-radius:8px;">Formu doldur →</a>
 <p style="margin:20px 0 0;font-size:12px;color:#9ca3af;">{form_linki}</p>
-<p style="margin:24px 0 0;font-size:13px;color:#6b7280;">Saygılarımızla,<br><strong>İnsan Kaynakları</strong></p>"""
+<p style="margin:24px 0 0;font-size:13px;color:#6b7280;">Saygılarımızla,<br><strong>{ik_imza} İnsan Kaynakları</strong></p>"""
     else:
         konu = f"Reminder: {envanter_adi} form not yet completed"
         icerik = f"""
@@ -180,6 +186,6 @@ def hatirlatma_emaili_olustur(
 </p>
 <a href="{form_linki}" style="display:inline-block;background:#1d4ed8;color:#fff;text-decoration:none;font-size:14px;font-weight:600;padding:12px 28px;border-radius:8px;">Complete the form →</a>
 <p style="margin:20px 0 0;font-size:12px;color:#9ca3af;">{form_linki}</p>
-<p style="margin:24px 0 0;font-size:13px;color:#6b7280;">Best regards,<br><strong>Tatko Human Resources</strong></p>"""
+<p style="margin:24px 0 0;font-size:13px;color:#6b7280;">Best regards,<br><strong>{ik_imza} Human Resources</strong></p>"""
 
-    return email_gonder(alici_email, alici_ad, konu, _html_sarmal(konu, icerik))
+    return email_gonder(alici_email, alici_ad, konu, _html_sarmal(konu, icerik), from_name)

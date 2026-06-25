@@ -3,7 +3,7 @@ import FormLayout from '../components/FormLayout'
 import { yanitKaydet } from '../api/form'
 import { PROBLEM_SORULAR } from '../data/envanter_sorular'
 
-export default function ProblemForm({ token, bilgi, onTamamlandi }) {
+export default function ProblemForm({ token, bilgi, firmaAdi, onTamamlandi }) {
   const mevcutYanitlar = bilgi.mevcut_yanitlar || {}
   const [yanitlar, setYanitlar] = useState(mevcutYanitlar.yanitlar || {})
   const [adim, setAdim] = useState('giris')
@@ -60,6 +60,7 @@ export default function ProblemForm({ token, bilgi, onTamamlandi }) {
   return (
     <FormLayout
       katilimciAd={`${bilgi.katilimci_ad} ${bilgi.katilimci_soyad}`}
+      firmaAdi={firmaAdi}
       envanter="Problem Çözme Tarzı Testi"
       adimlar={adimlar}
       ilerlemeYuzdesi={ilerleme}

@@ -61,6 +61,7 @@ export default function FormSayfasi() {
   const ortakProps = {
     token,
     bilgi,
+    firmaAdi: bilgi.firma_adi || '',
     onTamamlandi: () => setTamamlandi(true),
   }
 

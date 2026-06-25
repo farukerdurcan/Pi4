@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, Enum, ForeignKey, Text
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, Enum, ForeignKey, Text, UniqueConstraint
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from database import Base
@@ -52,9 +52,11 @@ class User(Base):
     ad = Column(String, nullable=False)
     soyad = Column(String, nullable=False)
     email = Column(String, unique=True, index=True, nullable=False)
-    hashed_password = Column(String, nullable=False)
+    hashed_password = Column(String, nullable=True)
     rol = Column(Enum(UserRole), default=UserRole.katilimci)
     aktif = Column(Boolean, default=True)
+    davet_token_hash = Column(String, nullable=True)
+    davet_token_son_kullanim = Column(DateTime(timezone=True), nullable=True)
     firma_id = Column(Integer, ForeignKey("firmalar.id"), nullable=True)
     olusturulma_tarihi = Column(DateTime(timezone=True), server_default=func.now())
 
@@ -67,11 +69,14 @@ class User(Base):
 # Katılımcı tablosu — form dolduracak kişiler (aday veya çalışan)
 class Katilimci(Base):
     __tablename__ = "katilimcilar"
+    __table_args__ = (
+        UniqueConstraint('firma_id', 'email', name='uq_katilimci_firma_email'),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     ad = Column(String, nullable=False)
     soyad = Column(String, nullable=False)
-    email = Column(String, unique=True, index=True, nullable=False)
+    email = Column(String, index=True, nullable=False)
     departman = Column(String, nullable=True)
     pozisyon = Column(String, nullable=True)
     tip = Column(Enum(KatilimciTipi), default=KatilimciTipi.aday)

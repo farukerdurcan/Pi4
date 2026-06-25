@@ -1,11 +1,14 @@
 import os
+import secrets
+import hashlib
+from datetime import datetime, timedelta
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, EmailStr
 from database import get_db
 from models import Firma, User, UserRole, Katilimci
-from auth import super_admin_gerektir, sifreyi_hashle
+from auth import super_admin_gerektir
 from services.email_service import ik_davet_emaili_olustur
 
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
@@ -30,7 +33,6 @@ class IKKullaniciOlustur(BaseModel):
     ad: str
     soyad: str
     email: EmailStr
-    sifre: str
 
 
 class SifreSifirla(BaseModel):
@@ -167,26 +169,32 @@ def ik_kullanici_ekle(
     if mevcut:
         raise HTTPException(status_code=400, detail="Bu e-posta adresi zaten kullanımda")
 
+    davet_token = secrets.token_urlsafe(32)
+    token_hash = hashlib.sha256(davet_token.encode()).hexdigest()
+    token_son_kullanim = datetime.utcnow() + timedelta(hours=72)
+
     kullanici = User(
         ad=istek.ad,
         soyad=istek.soyad,
         email=istek.email,
-        hashed_password=sifreyi_hashle(istek.sifre),
+        hashed_password=None,
         rol=UserRole.ik_yoneticisi,
         firma_id=firma_id,
-        aktif=True
+        aktif=True,
+        davet_token_hash=token_hash,
+        davet_token_son_kullanim=token_son_kullanim
     )
     db.add(kullanici)
     db.commit()
     db.refresh(kullanici)
 
+    hesap_kur_linki = f"{FRONTEND_URL}/hesap-kur?token={davet_token}"
     try:
         ik_davet_emaili_olustur(
             alici_email=kullanici.email,
             alici_ad=kullanici.tam_ad,
             firma_adi=firma.ad,
-            sifre=istek.sifre,
-            giris_linki=f"{FRONTEND_URL}/login"
+            hesap_kur_linki=hesap_kur_linki
         )
     except Exception:
         pass

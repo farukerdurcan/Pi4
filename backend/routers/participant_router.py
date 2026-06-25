@@ -11,7 +11,7 @@ from database import get_db
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 from models import (
     Katilimci, KatilimciTipi, Atama, AtamaDurumu,
-    EnvanterTipi, DavetLinki, Not, User, UserRole, YoneticiKatilimci
+    EnvanterTipi, DavetLinki, Not, User, UserRole, YoneticiKatilimci, Firma
 )
 from auth import ik_gerektir, aktif_kullanici, yonetici_veya_ik_gerektir
 from services.email_service import davet_emaili_olustur, hatirlatma_emaili_olustur
@@ -109,6 +109,24 @@ class PanelIstatistik(BaseModel):
     raporlanan: int
 
 # ------- Helper fonksiyonlar -------
+
+def _firma_adini_getir(firma_id: int, db: Session) -> str:
+    """IK kullanıcısının firmasının adını döner."""
+    firma = db.query(Firma).filter(Firma.id == firma_id).first()
+    return firma.ad if firma else ""
+
+
+def _firma_katilimcisini_getir(katilimci_id: int, firma_id: int, db: Session) -> Katilimci:
+    """Katılımcıyı getirir; firma uyuşmazlığında 404 fırlatır (IDOR önlemi)."""
+    k = db.query(Katilimci).filter(
+        Katilimci.id == katilimci_id,
+        Katilimci.firma_id == firma_id,
+        Katilimci.aktif == True
+    ).first()
+    if not k:
+        raise HTTPException(status_code=404, detail="Katılımcı bulunamadı")
+    return k
+
 
 def atama_yaniti_olustur(atama: Atama) -> AsamaYaniti:
     token = atama.davet_linki.token if atama.davet_linki else None
@@ -236,8 +254,11 @@ def katilimci_ekle(
     veri = istek
     envanter_tipleri = istek.envanter_tipleri or []
     dil = istek.dil
-    # E-posta tekrarını kontrol et
-    mevcut = db.query(Katilimci).filter(Katilimci.email == veri.email).first()
+    # E-posta tekrarını firma bazında kontrol et
+    mevcut = db.query(Katilimci).filter(
+        Katilimci.email == veri.email,
+        Katilimci.firma_id == kullanici.firma_id
+    ).first()
     if mevcut:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -253,6 +274,7 @@ def katilimci_ekle(
     db.flush()
 
     # Envanter atamaları varsa ekle
+    firma_adi = _firma_adini_getir(kullanici.firma_id, db)
     if envanter_tipleri:
         for tip in envanter_tipleri:
             atama = Atama(
@@ -265,11 +287,14 @@ def katilimci_ekle(
 
             # Benzersiz token üret
             token = str(uuid.uuid4())
-            link = DavetLinki(atama_id=atama.id, token=token)
+            link = DavetLinki(
+                atama_id=atama.id,
+                token=token,
+                son_kullanim_tarihi=datetime.utcnow() + timedelta(days=30)
+            )
             db.add(link)
             db.flush()
 
-            # E-posta gönder (dosyaya yaz)
             form_linki = f"{FRONTEND_URL}/form/{token}"
             envanter_adi = ENVANTER_ADLARI.get(tip.value, tip.value)
             davet_emaili_olustur(
@@ -277,6 +302,7 @@ def katilimci_ekle(
                 alici_ad=katilimci.tam_ad,
                 envanter_adi=envanter_adi,
                 form_linki=form_linki,
+                firma_adi=firma_adi,
                 dil=dil
             )
 
@@ -360,6 +386,7 @@ def toplu_hatirlatma_gonder(
         Atama.gonderim_tarihi <= esik
     ).all()
 
+    firma_adi = _firma_adini_getir(kullanici.firma_id, db)
     gonderilen = 0
     for a in atamalar:
         k = a.katilimci
@@ -374,6 +401,7 @@ def toplu_hatirlatma_gonder(
                 alici_ad=k.tam_ad,
                 envanter_adi=envanter_adi,
                 form_linki=form_linki,
+                firma_adi=firma_adi,
                 dil="tr"
             )
             gonderilen += 1
@@ -416,12 +444,7 @@ def katilimci_detay(
         if not atama:
             raise HTTPException(status_code=403, detail="Bu katılımcıya erişim yetkiniz yok")
 
-    k = db.query(Katilimci).filter(
-        Katilimci.id == katilimci_id,
-        Katilimci.aktif == True
-    ).first()
-    if not k:
-        raise HTTPException(status_code=404, detail="Katılımcı bulunamadı")
+    k = _firma_katilimcisini_getir(katilimci_id, kullanici.firma_id, db)
     return _katilimci_yaniti_olustur(k)
 
 
@@ -433,9 +456,7 @@ def katilimci_guncelle(
     kullanici: User = Depends(ik_gerektir)
 ):
     """Katılımcı bilgilerini günceller"""
-    k = db.query(Katilimci).filter(Katilimci.id == katilimci_id).first()
-    if not k:
-        raise HTTPException(status_code=404, detail="Katılımcı bulunamadı")
+    k = _firma_katilimcisini_getir(katilimci_id, kullanici.firma_id, db)
 
     for alan, deger in veri.model_dump(exclude_unset=True).items():
         setattr(k, alan, deger)
@@ -452,9 +473,7 @@ def envanter_ata(
     kullanici: User = Depends(ik_gerektir)
 ):
     """Var olan katılımcıya yeni envanter(ler) atar ve e-posta gönderir"""
-    k = db.query(Katilimci).filter(Katilimci.id == katilimci_id).first()
-    if not k:
-        raise HTTPException(status_code=404, detail="Katılımcı bulunamadı")
+    k = _firma_katilimcisini_getir(katilimci_id, kullanici.firma_id, db)
 
     for tip in veri.envanter_tipleri:
         # Aynı envanter zaten atanmış mı?
@@ -485,6 +504,7 @@ def envanter_ata(
             alici_ad=k.tam_ad,
             envanter_adi=envanter_adi,
             form_linki=form_linki,
+            firma_adi=_firma_adini_getir(kullanici.firma_id, db),
             dil=veri.dil
         )
 
@@ -502,9 +522,7 @@ def hatirlatma_gonder(
     kullanici: User = Depends(ik_gerektir)
 ):
     """Belirtilen atama için hatırlatma e-postası gönderir"""
-    k = db.query(Katilimci).filter(Katilimci.id == katilimci_id).first()
-    if not k:
-        raise HTTPException(status_code=404, detail="Katılımcı bulunamadı")
+    k = _firma_katilimcisini_getir(katilimci_id, kullanici.firma_id, db)
 
     atama = db.query(Atama).filter(
         Atama.id == atama_id,
@@ -528,6 +546,7 @@ def hatirlatma_gonder(
         alici_ad=k.tam_ad,
         envanter_adi=envanter_adi,
         form_linki=form_linki,
+        firma_adi=_firma_adini_getir(kullanici.firma_id, db),
         dil=dil
     )
     return {"mesaj": "Hatırlatma e-postası gönderildi"}
@@ -541,9 +560,7 @@ def not_ekle(
     kullanici: User = Depends(ik_gerektir)
 ):
     """Katılımcıya İK notu ekler"""
-    k = db.query(Katilimci).filter(Katilimci.id == katilimci_id).first()
-    if not k:
-        raise HTTPException(status_code=404, detail="Katılımcı bulunamadı")
+    k = _firma_katilimcisini_getir(katilimci_id, kullanici.firma_id, db)
 
     not_kaydi = Not(
         katilimci_id=katilimci_id,

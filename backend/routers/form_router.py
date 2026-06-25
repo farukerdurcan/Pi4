@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from database import get_db
-from models import DavetLinki, Atama, AtamaDurumu, FormYaniti, Katilimci, PuanSonucu
+from models import DavetLinki, Atama, AtamaDurumu, FormYaniti, Katilimci, PuanSonucu, Firma
 from services.puanlama import puan_hesapla
 
 router = APIRouter(prefix="/api/form", tags=["Form"])
@@ -22,6 +22,7 @@ class FormBilgisi(BaseModel):
     envanter_adi: str
     atama_id: int
     tamamlandi: bool
+    firma_adi: str = ""
     mevcut_yanitlar: Dict[str, Any] = {}
 
 class YanitKaydet(BaseModel):
@@ -47,6 +48,8 @@ def form_bilgisi_getir(token: str, db: Session = Depends(get_db)):
     link = db.query(DavetLinki).filter(DavetLinki.token == token).first()
     if not link:
         raise HTTPException(status_code=404, detail="Geçersiz veya süresi dolmuş link")
+    if link.son_kullanim_tarihi and link.son_kullanim_tarihi.replace(tzinfo=None) < datetime.utcnow():
+        raise HTTPException(status_code=410, detail="Bu bağlantının süresi dolmuş")
 
     atama = link.atama
     katilimci = atama.katilimci
@@ -55,6 +58,8 @@ def form_bilgisi_getir(token: str, db: Session = Depends(get_db)):
     mevcut = db.query(FormYaniti).filter(FormYaniti.atama_id == atama.id).first()
     mevcut_yanitlar = json.loads(mevcut.yanitlar) if mevcut else {}
     tamamlandi = mevcut.tamamlandi if mevcut else False
+
+    firma_adi = katilimci.firma.ad if katilimci.firma else ""
 
     return FormBilgisi(
         token=token,
@@ -65,6 +70,7 @@ def form_bilgisi_getir(token: str, db: Session = Depends(get_db)):
         envanter_adi=ENVANTER_ADLARI.get(atama.envanter_tipi.value, atama.envanter_tipi.value),
         atama_id=atama.id,
         tamamlandi=tamamlandi,
+        firma_adi=firma_adi,
         mevcut_yanitlar=mevcut_yanitlar
     )
 
@@ -83,6 +89,8 @@ def yanit_kaydet(
     link = db.query(DavetLinki).filter(DavetLinki.token == token).first()
     if not link:
         raise HTTPException(status_code=404, detail="Geçersiz link")
+    if link.son_kullanim_tarihi and link.son_kullanim_tarihi.replace(tzinfo=None) < datetime.utcnow():
+        raise HTTPException(status_code=410, detail="Bu bağlantının süresi dolmuş")
 
     atama = link.atama
 

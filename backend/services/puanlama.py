@@ -114,18 +114,18 @@ def motivasyon_hesapla(yanitlar: Dict) -> Dict:
 # ─── Kişilerarası Etkileşim ─────────────────────────────────────────────────
 
 ETKILESIM_GRUPLARI = {
-    "giriskен":     [1, 5, 9, 13, 17, 21, 25, 29, 33, 37],
+    "girişken":     [1, 5, 9, 13, 17, 21, 25, 29, 33, 37],
     "pasif":        [2, 6, 10, 14, 18, 22, 26, 30, 34, 38],
     "sakli_agresif":[3, 7, 11, 15, 19, 23, 27, 31, 35, 39],
     "acik_agresif": [4, 8, 12, 16, 20, 24, 28, 32, 36, 40],
 }
 ETKILESIM_DEGER = {"TB": 5, "GB": 4, "BB": 3, "NB": 2, "KB": 1}
 ETKILESIM_HARF = {
-    "giriskен": "G", "pasif": "P",
+    "girişken": "G", "pasif": "P",
     "sakli_agresif": "S", "acik_agresif": "A"
 }
 ETKILESIM_AD = {
-    "giriskен": "Girişken", "pasif": "Pasif",
+    "girişken": "Girişken", "pasif": "Pasif",
     "sakli_agresif": "Saklı Agresif", "acik_agresif": "Açık Agresif"
 }
 
@@ -167,7 +167,7 @@ def etkilesim_hesapla(yanitlar: Dict) -> Dict:
     return {
         "envanter": "kisisel_etkilesim",
         "puanlar": {
-            "giriskен": boyut_puanlari["giriskен"],
+            "girişken": boyut_puanlari["girişken"],
             "pasif": boyut_puanlari["pasif"],
             "sakli_agresif": boyut_puanlari["sakli_agresif"],
             "acik_agresif": boyut_puanlari["acik_agresif"],
