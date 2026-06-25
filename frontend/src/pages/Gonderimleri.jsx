@@ -80,6 +80,7 @@ export default function Gonderimleri() {
   const [hata, setHata] = useState('')
   const [arama, setArama] = useState('')
   const [hatirlatmaYukleniyor, setHatirlatmaYukleniyor] = useState(null)
+  const [bildirim, setBildirim] = useState('')
 
   useEffect(() => {
     gonderimleriListele()
@@ -92,8 +93,14 @@ export default function Gonderimleri() {
     setHatirlatmaYukleniyor(atamaId)
     try {
       await hatirlatmaGonder(katilimciId, atamaId)
-    } catch {}
-    finally { setHatirlatmaYukleniyor(null) }
+      setBildirim('Hatırlatma gönderildi ✓')
+      setTimeout(() => setBildirim(''), 3000)
+    } catch {
+      setBildirim('Gönderim başarısız')
+      setTimeout(() => setBildirim(''), 3000)
+    } finally {
+      setHatirlatmaYukleniyor(null)
+    }
   }
 
   // Flat listeyi katılımcı bazında matrise çevir
@@ -246,6 +253,13 @@ export default function Gonderimleri() {
           )}
         </div>
       </div>
+      {/* Toast bildirimi */}
+      {bildirim && (
+        <div className={`fixed bottom-6 right-6 z-50 px-4 py-2.5 rounded-lg shadow-lg text-sm font-medium text-white transition-all
+          ${bildirim.includes('başarısız') ? 'bg-red-500' : 'bg-green-500'}`}>
+          {bildirim}
+        </div>
+      )}
     </Layout>
   )
 }
